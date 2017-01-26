@@ -1,0 +1,15 @@
+{
+  "name": "firebot",
+  "version": "1.0.0",
+  "description": "slackbot for detecting channel activity",
+  "main": "firebot.js",
+  "dependencies": {
+    "express": "^4.14.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "fire"
+  },
+  "author": "haleymt",
+  "license": "ISC"
+}
