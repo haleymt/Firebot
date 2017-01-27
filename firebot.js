@@ -49,7 +49,7 @@ controller.hears(['which channels'], 'direct_message,direct_mention,mention', fu
   });
 });
 
-controller.hears(['is (.*) lit', 'is (.*) lit right now'], 'ambient,direct_message,direct_mention,mention', function(bot, message) {
+controller.hears(['is (.*) lit', 'is (.*) lit right now', 'is (.*) lit rn'], 'ambient,direct_message,direct_mention,mention', function(bot, message) {
   var channel = message.match[1];
   console.log(channel);
   var text = 'nope';
@@ -66,6 +66,10 @@ controller.hears(['is (.*) lit', 'is (.*) lit right now'], 'ambient,direct_messa
     text = positives[Math.floor(Math.random() * positives.length)];
   }
 
+  if (channel === 'beiser') {
+    text = 'lol fuck off';
+  }
+  
   if (channel === 'rev' || channel === 'st_rev') {
     text = 'NO';
   }
