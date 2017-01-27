@@ -1,9 +1,5 @@
 /* FIREBOT */
 
-
-var api_token = "xoxb-132229104724-yPQFJGTCzBx4XGkpLCGmoSwG";
-/* token="xoxb-132229104724-yPQFJGTCzBx4XGkpLCGmoSwG" node firebot.js */
-
 if (!process.env.token) {
     console.log('Error: Specify token in environment');
     process.exit(1);
@@ -17,6 +13,38 @@ var controller = Botkit.slackbot({
     debug: true,
 });
 
+controller.configureSlackApp({
+  clientId: process.env.clientId,
+  clientSecret: process.env.clientSecret,
+  redirectUri: 'http://localhost:3002',
+  scopes: ['incoming-webhook','team:read','users:read','channels:read','im:read','im:write','groups:read','emoji:read','chat:write:bot']
+});
+
+controller.setupWebserver(process.env.port,function(err,webserver) {
+
+  // set up web endpoints for oauth, receiving webhooks, etc.
+  controller
+    .createHomepageEndpoint(controller.webserver)
+    .createOauthEndpoints(controller.webserver)
+    .createWebhookEndpoints(controller.webserver);
+
+});
+
+controller.hears(['which channels'], 'direct_message,direct_mention,mention', function(bot, message) {
+  bot.dailyActiveChannels = [];
+
+  bot.getActivity(true, function (channel, isLast) {
+    if (channel) {
+      bot.dailyActiveChannels.push(channel);
+    }
+
+    if (isLast && bot.dailyActiveChannels.length) {
+      var text = formatBotText(bot.dailyActiveChannels, true);
+      bot.reply(message, text);
+    }
+  });
+});
+
 var bot = controller.spawn({
     token: process.env.token
 }).startRTM();
@@ -24,13 +52,56 @@ var bot = controller.spawn({
 bot.dailyActiveChannels = [];
 bot.recentActiveChannels = [];
 
+bot.getChannelList = function(callback) {
+  /* Slack API call to get list of channels */
+  this.api.channels.list({ token: this.token }, function (err, res) {
+    if (res && res.ok) {
+      callback(res.channels);
+    }
+  });
+};
+
+bot.getChannelHistory = function(channel, isLast, daily, callback) {
+  /* milliseconds in a day === 86400000 */
+  /* milliseconds in 20 minutes === 1200000 */
+  var offset = daily ? 86400000 : 1200000;
+  var messageMinimum = daily ? 19 : 9;
+  var oldestTime = (new Date().getTime() - offset) / 1000;
+
+  this.api.channels.history({
+    token: this.token,
+    channel: channel.id,
+    oldest: oldestTime,
+    count: 50,
+  }, function(err, res) {
+    if (res && res.ok && res.messages && channelIsActive(res.messages, messageMinimum)) {
+      callback(channel, isLast);
+    } else if (isLast) {
+      callback(false, isLast)
+    }
+  });
+};
+
+bot.getActivity = function(daily, callback) {
+  /* Gets list of channels with more than X messages in the last day */
+
+  this.getChannelList(function (channels) {
+    if (channels) {
+      for (var i = 0; i < channels.length; i++) {
+        var isLast = i === channels.length - 1;
+        this.getChannelHistory(channels[i], isLast, daily, callback);
+      }
+    }
+  }.bind(this));
+};
+
 bot.startInterval = function () {
   /* Checks level of activity every 10 minutes (600000ms)*/
   var _this = this;
   var checkInterval = setInterval( function () {
     _this.recentActiveChannels = [];
 
-    getActivity(_this, false, function (channel, isLast) {
+    _this.getActivity(false, function (channel, isLast) {
       if (channel) {
         _this.recentActiveChannels.push(channel);
       }
@@ -46,27 +117,26 @@ bot.startInterval = function () {
 
 bot.startInterval();
 
+function channelIsActive (messages, minimum) {
+  var users = [];
+  var messageCount = 0;
 
-controller.hears(['which channels'], 'direct_message,direct_mention,mention', function(bot, message) {
-  bot.dailyActiveChannels = [];
-
-  getActivity(bot, true, function (channel, isLast) {
-    if (channel) {
-      bot.dailyActiveChannels.push(channel);
+  for (var i = 0; i < messages.length; i++) {
+    if (!messages[i].subtype || subtypeWhitelist.indexOf(messages[i].subtype) > -1) {
+      messageCount++;
     }
 
-    if (isLast && bot.dailyActiveChannels.length) {
-      var text = formatBotText(bot.dailyActiveChannels, true);
-      bot.reply(message, text);
+    if (users.indexOf(messages[i].user) < 0) {
+      users.push(messages[i].user);
     }
-  });
-});
 
-controller.setupWebserver(process.env.port,function(err,webserver) {
+    if (messageCount > minimum && users.length > 1) {
+      return true;
+    }
+  }
 
-  controller.createWebhookEndpoints(controller.webserver);
-
-});
+  return messageCount > minimum && users.length > 1;
+};
 
 function formatBotText (channelList, daily) {
   var text = 'The ';
@@ -106,68 +176,4 @@ function formatBotText (channelList, daily) {
   }
 
   return text;
-};
-
-function channelIsActive (messages, minimum) {
-  var users = [];
-  var messageCount = 0;
-
-  for (var i = 0; i < messages.length; i++) {
-    if (!messages[i].subtype || subtypeWhitelist.indexOf(messages[i].subtype) > -1) {
-      messageCount++;
-    }
-
-    if (users.indexOf(messages[i].user) < 0) {
-      users.push(messages[i].user);
-    }
-
-    if (messageCount > minimum && users.length > 1) {
-      return true;
-    }
-  }
-
-  return messageCount > minimum && users.length > 1;
-};
-
-function getChannelList (bot, callback) {
-  /* Slack API call to get list of channels */
-  bot.api.channels.list({ token: bot.token }, function (err, res) {
-    if (res.ok) {
-      callback(res.channels);
-    }
-  });
-};
-
-function getChannelHistory(bot, channel, isLast, daily, callback) {
-  /* milliseconds in a day === 86400000 */
-  /* milliseconds in 15 minutes === 900000 */
-  var offset = daily ? 86400000 : 1200000;
-  var messageMinimum = daily ? 20 : 10;
-  var oldestTime = (new Date().getTime() - offset) / 1000;
-
-  bot.api.channels.history({
-    token: bot.token,
-    channel: channel.id,
-    oldest: oldestTime,
-    count: messageMinimum,
-  }, function(err, res) {
-    if (res.ok && res.messages && channelIsActive(res.messages, messageMinimum - 1)) {
-      callback(channel, isLast);
-    } else if (isLast) {
-      callback(false, isLast)
-    }
-  });
-};
-
-function getActivity (bot, daily, callback) {
-  /* Gets list of channels with more than X messages in the last day */
-
-  getChannelList(bot, function (channels) {
-    if (channels) {
-      for (var i = 0; i < channels.length; i++) {
-        var isLast = i === channels.length - 1;
-        getChannelHistory(bot, channels[i], isLast, daily, callback);
-      }
-    }
-  });
 };
