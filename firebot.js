@@ -8,9 +8,9 @@ if (!process.env.token) {
 var Botkit = require('botkit');
 var os = require('os');
 var subtypeWhitelist = ['file_comment', 'file_mention', 'file_share', 'message_replied', 'reply_broadcast'];
-var negatives = ['no', 'no.', 'nope', 'not at all', 'no, only hales', 'uh..', 'lol', 'sorry man', 'meh', 'nah', 'ha', 'never'];
+var negatives = ['no', 'no.', 'nope', 'not at all', 'no, only hales', 'uh..', 'lol', 'sorry man', 'meh', 'nah', 'ha', 'never', 'definitely not'];
 var positives = ['very much so', 'absolutely', 'def', 'ya'];
-var indifferent =['they are OK', 'meh', 'sure', 'you know what? yes', 'hm', 'NO'];
+var indifferent =['fine', 'meh', 'sure', 'hm', 'no'];
 var people = ['shreeda', 'freeshreeda', 'curry.ove', 'beiser', 'voidfraction', 'akira', 'sol', 'tao', 'turrible_tao', 'jamesmcn', 'ksim', 'jsf', 'ema', 'othercriteria', 'cwage', 'alt', 'meaningness', 'andrew', 'asquidislove', 'ctrl', 'black_dwarf', 'blue_traveler', 'byrne', 'pamela', 'bookoftamara', 'chamber_of_heart', 'cobuddha', 'contemplationist', 'drethelin', 'grumplessgrinch', 'gabe', 'joelgrus', 'julespitt', 'keffie', 'mattsimpson', 'niftierideology', 'simplicio', 'suchaone', 'svigalae', 'the_langrangian', 'tipsycaek'];
 
 var controller = Botkit.slackbot({
@@ -67,7 +67,7 @@ controller.hears(['is (.*) lit', 'is (.*) lit right now'], 'ambient,direct_messa
   }
 
   if (channel === 'rev' || channel === 'st_rev') {
-    text = 'NO';
+    text = indifferent[Math.floor(Math.random() * indifferent.length)];
   }
 
   if (channel === 'sarah' || channel === 'sarahsloth') {
