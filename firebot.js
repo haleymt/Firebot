@@ -8,6 +8,10 @@ if (!process.env.token) {
 var Botkit = require('botkit');
 var os = require('os');
 var subtypeWhitelist = ['file_comment', 'file_mention', 'file_share', 'message_replied', 'reply_broadcast'];
+var negatives = ['no', 'no.', 'nope', 'not at all', 'no, only hales', 'uh..', 'lol', 'sorry man', 'meh', 'nah', 'ha', 'never'];
+var positives = ['very much so', 'absolutely', 'def', 'ya'];
+var indifferent =['they are OK', 'meh', 'sure', 'you know what? yes', 'hm', 'NO'];
+var people = ['shreeda', 'freeshreeda', 'curry.ove', 'beiser', 'voidfraction', 'akira', 'sol', 'tao', 'turrible_tao', 'jamesmcn', 'ksim', 'jsf', 'ema', 'othercriteria', 'cwage', 'alt', 'meaningness', 'andrew', 'asquidislove', 'ctrl', 'black_dwarf', 'blue_traveler', 'byrne', 'pamela', 'bookoftamara', 'chamber_of_heart', 'cobuddha', 'contemplationist', 'drethelin', 'grumplessgrinch', 'gabe', 'joelgrus', 'julespitt', 'keffie', 'mattsimpson', 'niftierideology', 'simplicio', 'suchaone', 'svigalae', 'the_langrangian', 'tipsycaek'];
 
 var controller = Botkit.slackbot({
     debug: true,
@@ -45,12 +49,49 @@ controller.hears(['which channels'], 'direct_message,direct_mention,mention', fu
   });
 });
 
+controller.hears(['is (.*) lit', 'is (.*) lit right now'], 'ambient,direct_message,direct_mention,mention', function(bot, message) {
+  var channel = message.match[1];
+  console.log(channel);
+  var text = 'nope';
+
+  if (channel[0] === '#') {
+    channel = channel.slice(1);
+  }
+
+  if (channel[0] === '<') {
+    channel = channel.slice(channel.indexOf('|') + 1, channel.length - 1);
+  }
+
+  if (channel === 'hales' || channel === 'firebot') {
+    text = positives[Math.floor(Math.random() * positives.length)];
+  }
+
+  if (channel === 'rev' || channel === 'st_rev') {
+    text = 'NO';
+  }
+
+  if (channel === 'sarah' || channel === 'sarahsloth') {
+    text = 'they are a banana';
+  }
+
+  if (people.indexOf(channel) > -1) {
+    text = negatives[Math.floor(Math.random() * negatives.length)];
+  }
+
+  if (bot.hourlyActivity[channel]) {
+    var text = channel === 'politics' ? 'no, but yes' : 'yep';
+  }
+
+  bot.reply(message, text);
+});
+
 var bot = controller.spawn({
     token: process.env.token
 }).startRTM();
 
 bot.dailyActiveChannels = [];
 bot.recentActiveChannels = [];
+bot.hourlyActivity = {};
 
 bot.getChannelList = function(callback) {
   /* Slack API call to get list of channels */
@@ -104,11 +145,35 @@ bot.startInterval = function () {
     _this.getActivity(false, function (channel, isLast) {
       if (channel) {
         _this.recentActiveChannels.push(channel);
+
+        if (!_this.hourlyActivity[channel.name] || _this.hourlyActivity[channel.name] === 4) {
+          _this.hourlyActivity[channel.name] = 1;
+        } else {
+          _this.hourlyActivity[channel.name] += 1;
+        }
       }
 
-      if (isLast && _this.recentActiveChannels.length) {
-        var text = formatBotText(_this.recentActiveChannels);
-        _this.send({text: text, channel: "#general"});
+      if (isLast) {
+        /* Only announces channels that haven't been announced in the last hour */
+        var filteredChannels = [];
+        for (var i = 0; i < _this.recentActiveChannels.length; i++) {
+          if (_this.hourlyActivity[_this.recentActiveChannels[i].name] === 1) {
+            filteredChannels.push(_this.recentActiveChannels[i]);
+          }
+        }
+
+        /* If a channel wasn't active during the last tick, it resets the hourly count to 0 */
+        Object.keys(_this.hourlyActivity).forEach(function(key) {
+          if (!_this.recentActiveChannels.find(function(channel) { channel.name === key })) {
+            var value = _this.hourlyActivity[key];
+            _this.hourlyActivity[key] = value && value < 4 ? value + 1 : 0;
+          }
+        });
+
+        if (filteredChannels.length) {
+          var text = formatBotText(filteredChannels);
+          _this.send({text: text, channel: "#isitlit"});
+        }
       }
     });
 
