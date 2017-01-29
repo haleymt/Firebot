@@ -11,7 +11,7 @@ var subtypeWhitelist = ['file_comment', 'file_mention', 'file_share', 'message_r
 var negatives = ['no', 'no.', 'nope', 'not at all', 'no, only hales', 'uh..', 'lol', 'sorry man', 'meh', 'nah', 'ha', 'never', 'definitely not'];
 var positives = ['very much so', 'absolutely', 'def', 'ya'];
 var indifferent =['fine', 'meh', 'sure', 'hm', 'no'];
-var badPeople = ['shreeda', 'freeshreeda', 'curry.ove', 'beiser', 'voidfraction', 'akira', 'sol', 'tao', 'turrible_tao', 'jamesmcn', 'ksim', 'jsf', 'ema', 'othercriteria', 'cwage', 'alt', 'meaningness', 'andrew', 'asquidislove', 'ctrl', 'black_dwarf', 'blue_traveler', 'byrne', 'pamela', 'bookoftamara', 'chamber_of_heart', 'cobuddha', 'contemplationist', 'drethelin', 'grumplessgrinch', 'gabe', 'joelgrus', 'julespitt', 'keffie', 'mattsimpson', 'niftierideology', 'simplicio', 'suchaone', 'svigalae', 'the_langrangian', 'tipsycaek'];
+var badPeople = ['shreeda', 'freeshreeda', 'curry.ove', 'beiser', 'voidfraction', 'akira', 'sol', 'tao', 'turrible_tao', 'jamesmcn', 'ksim', 'jsf', 'ema', 'othercriteria', 'cwage', 'alt', 'meaningness', 'andrew', 'asquidislove', 'ctrl', 'black_dwarf', 'blue_traveler', 'byrne', 'pamela', 'bookoftamara', 'chamber_of_heart', 'cobuddha', 'contemplationist', 'drethelin', 'grumplessgrinch', 'joelgrus', 'julespitt', 'keffie', 'mattsimpson', 'niftierideology', 'simplicio', 'suchaone', 'svigalae', 'the_langrangian', 'tipsycaek'];
 
 var controller = Botkit.slackbot({
     debug: true,
@@ -22,15 +22,7 @@ var bot = controller.spawn({
     token: process.env.token
 }).startRTM(function(err, bot, payload) {
   if (bot) {
-    bot.allChannels = [];
-    if (payload && payload.channels) {
-      payload.channels.forEach(function(channel) {
-        if (!channel.is_archived) {
-          bot.allChannels.push(channel);
-        }
-      });
-    }
-    bot.allUsers = payload ? payload.users : [];
+    bot.setUpBot(payload);
   }
 });
 
@@ -51,19 +43,46 @@ var bot = controller.spawn({
 //
 // });
 
-controller.hears(['which channels'], 'direct_message,direct_mention,mention', function(bot, message) {
-  bot.dailyActiveChannels = [];
+controller.hears(['which channels (.*)'], 'direct_message,direct_mention,mention', function(bot, message) {
+  var question = message.match[1];
 
-  bot.getActivity(true, function (channel, isLast) {
-    if (channel) {
-      bot.dailyActiveChannels.push(channel);
-    }
+  if (question === 'are dead') {
+    bot.deadChannels = [];
 
-    if (isLast && bot.dailyActiveChannels.length) {
-      var text = formatBotText(bot.dailyActiveChannels, true, bot);
-      bot.reply(message, text);
-    }
-  });
+    bot.getDeadChannels(function(channel, isLast) {
+      if (channel) {
+        bot.deadChannels.push(channel);
+      }
+
+      if (isLast) {
+        var deadText;
+        if (bot.deadChannels.length) {
+          deadText = formatBotText(bot.deadChannels, "dead", bot);
+        } else {
+          deadText = "No dead channels right now."
+        }
+        bot.reply(message, deadText);
+      }
+    });
+  } else {
+    bot.dailyActiveChannels = [];
+
+    bot.getActivity(true, function (channel, isLast) {
+      if (channel) {
+        bot.dailyActiveChannels.push(channel);
+      }
+
+      if (isLast) {
+        var text;
+        if (bot.dailyActiveChannels.length) {
+          text = formatBotText(bot.dailyActiveChannels, "daily", bot);
+        } else {
+          text = "No channels have been busy lately."
+        }
+        bot.reply(message, text);
+      }
+    });
+  }
 });
 
 controller.hears(['who is lit'], 'direct_message,direct_mention,mention', function(bot, message) {
@@ -112,6 +131,10 @@ controller.hears(['is (.*) lit', 'is (.*) lit right now', 'is (.*) lit rn', 'am 
       text = 'they are a banana';
     }
 
+    if (channel === 'gabe') {
+      text = ':hankey:';
+    }
+
     if (badPeople.indexOf(channel) > -1) {
       text = negatives[Math.floor(Math.random() * negatives.length)];
     }
@@ -126,7 +149,33 @@ controller.hears(['is (.*) lit', 'is (.*) lit right now', 'is (.*) lit rn', 'am 
 
 bot.dailyActiveChannels = [];
 bot.recentActiveChannels = [];
+bot.deadChannels = [];
 bot.hourlyActivity = {};
+
+bot.setUpBot = function (payload) {
+  bot.allChannels = [];
+  bot.allUsers = []
+
+  if (payload) {
+    if (payload.channels) {
+      payload.channels.forEach(function(channel) {
+        if (!channel.is_archived) {
+          bot.allChannels.push(channel);
+        }
+      });
+    }
+
+    if (payload.users) {
+      bot.allUsers = payload.users;
+    }
+
+    // bot.getDeadChannels(function(channel, isLast) {
+    //   if (channel) {
+    //     bot.deadChannels.push(channel);
+    //   }
+    // });
+  }
+};
 
 bot.getChannelList = function(callback) {
   /* Slack API call to get list of channels */
@@ -164,6 +213,23 @@ bot.getChannelHistory = function(channel, isLast, daily, callback) {
   });
 };
 
+bot.getDeadChannelHistory = function (channel, isLast, callback) {
+  var weekAgo = (new Date().getTime() - (86400000 * 7)) / 1000;
+
+  this.api.channels.history({
+    token: this.token,
+    channel: channel.id,
+    oldest: weekAgo,
+    count: 10
+  }, function(err, res) {
+    if (res && res.ok && res.messages && !res.messages.length) {
+      callback(channel, isLast);
+    } else if (isLast) {
+      callback(false, isLast);
+    }
+  });
+};
+
 bot.getActivity = function(daily, callback) {
   /* Gets list of channels with more than X messages in the last day */
 
@@ -175,6 +241,21 @@ bot.getActivity = function(daily, callback) {
       }
     }
   }.bind(this));
+};
+
+bot.getDeadChannels = function(callback) {
+  this.getChannelList(function (channels) {
+    if (channels) {
+      for (var i = 0; i < channels.length; i++) {
+        var isLast = i === channels.length - 1;
+        this.getDeadChannelHistory(channels[i], isLast, callback);
+      }
+    }
+  }.bind(this));
+};
+
+bot.checkForChannelRevival = function (channel) {
+  return bot.deadChannels.find(function(ch) { return ch.id === channel.id });
 };
 
 bot.startInterval = function () {
@@ -212,7 +293,7 @@ bot.startInterval = function () {
         });
 
         if (filteredChannels.length) {
-          var text = formatBotText(filteredChannels, false, _this);
+          var text = formatBotText(filteredChannels, "lit", _this);
           _this.send({text: text, channel: "#isitlit"});
         }
       }
@@ -244,44 +325,48 @@ function channelIsActive (messages, minimum) {
   return messageCount > minimum && users.length > 1;
 };
 
-function formatBotText (channelList, daily, bot) {
+function formatBotText (channelList, type, bot) {
   var text = 'The ';
   var channelName;
 
-  if (daily) {
-    if (channelList.length === 1) {
-      text += `${getChannelText(channelList[0].name, bot)} channel was `;
-    } else {
-      for (var i = 0; i < channelList.length; i++) {
-        channelName = getChannelText(channelList[i].name, bot);
-        if (i === channelList.length - 1) {
-          text += ` and ${channelName} channels were `;
-        } else if (i === channelList.length - 2) {
-          text += `${channelName}`;
-        } else {
-          text += `${channelName}, `;
-        }
+  if (type === 'daily' || type === 'revived') {
+    for (var i = 0; i < channelList.length; i++) {
+      channelName = getChannelText(channelList[i].name, bot);
+      if (channelList.length === 1) {
+        text += `${channelName} channel was `;
+      } else if (i === channelList.length - 1) {
+        text += ` and ${channelName} channels were `;
+      } else if (i === channelList.length - 2) {
+        text += `${channelName}`;
+      } else {
+        text += `${channelName}, `;
       }
     }
 
-    text += 'busy today.';
+    if (type === 'daily') {
+      text += 'busy today.';
+    } else {
+      text += 'revived!!!';
+    }
   } else {
-    if (channelList.length === 1) {
-      text += `${getChannelText(channelList[0].name, bot)} channel is `;
-    } else {
-      for (var i = 0; i < channelList.length; i++) {
-        channelName = getChannelText(channelList[i].name, bot);
-        if (i === channelList.length - 1) {
-          text += ` and ${channelName} channels are `;
-        } else if (i === channelList.length - 2) {
-          text += `${channelName}`;
-        } else {
-          text += `${channelName}, `;
-        }
+    for (var i = 0; i < channelList.length; i++) {
+      channelName = getChannelText(channelList[i].name, bot);
+      if (channelList.length === 1) {
+        text += `${channelName} channel is `;
+      } else if (i === channelList.length - 1) {
+        text += ` and ${channelName} channels are `;
+      } else if (i === channelList.length - 2) {
+        text += `${channelName}`;
+      } else {
+        text += `${channelName}, `;
       }
     }
 
-    text += 'lit right now.';
+    if (type === 'dead') {
+      text += 'pretty dead. No new posts in the last week.'
+    } else {
+      text += 'lit right now.';
+    }
   }
 
   return text;
