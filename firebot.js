@@ -6,7 +6,7 @@ if (!process.env.token) {
 }
 
 var Botkit = require('botkit');
-var os = require('os');
+// var os = require('os');
 var subtypeWhitelist = ['file_comment', 'file_mention', 'file_share', 'message_replied', 'reply_broadcast'];
 var negatives = ['no', 'no.', 'nope', 'not at all', 'no, only hales', 'uh..', 'lol', 'sorry man', 'meh', 'nah', 'ha', 'never', 'definitely not'];
 var positives = ['very much so', 'absolutely', 'def', 'ya'];
