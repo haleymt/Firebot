@@ -195,7 +195,7 @@ var Firebot = {
 
           if (filteredChannels.length) {
             var text = _this.formatBotText(filteredChannels, "lit");
-            _this.send({text: text, channel: "#isitlit"});
+            _this.bot.send({text: text, channel: "#isitlit"});
           }
         }
       }.bind(_this));
@@ -231,12 +231,7 @@ var Firebot = {
       oldest: oldestTime,
       count: 50,
     }, function(err, res) {
-      if (res &&
-          res.ok &&
-          res.messages &&
-          ((!messageMinimum && !res.messages.length) ||
-          (messageMinimum && this.channelIsActive(res.messages, messageMinimum))
-        ) {
+      if (res && res.ok && res.messages && ((!messageMinimum && !res.messages.length) || (messageMinimum && this.channelIsActive(res.messages, messageMinimum)))) {
         callback(channel, isLast);
       } else if (isLast) {
         callback(false, isLast)
