@@ -7,6 +7,7 @@
 var app = require('../main');
 var debug = require('debug')('Firebot');
 var http = require('http');
+var Firebot = require('../firebot');
 
 /**
  * Get port from environment and store in Express.
@@ -87,4 +88,7 @@ function onListening() {
     ? 'pipe ' + addr
     : 'port ' + addr.port;
   debug('Listening on ' + bind);
+
+  /* run firebot once server is up */
+  Firebot.run();
 }

@@ -1,6 +1,6 @@
 var subtypeWhitelist = ['file_comment', 'file_mention', 'file_share', 'message_replied', 'reply_broadcast'];
-var negatives = ['no', 'no.', 'nope', 'not at all', 'no, only hales', 'uh..', 'lol', 'sorry man', 'meh', 'nah', 'ha', 'never', 'definitely not'];
-var positives = ['very much so', 'absolutely', 'def', 'ya'];
+var negative = ['no', 'no.', 'nope', 'not at all', 'no, only hales', 'uh..', 'lol', 'sorry man', 'meh', 'nah', 'ha', 'never', 'definitely not'];
+var positive = ['very much so', 'absolutely', 'def', 'ya'];
 var indifferent =['fine', 'meh', 'sure', 'hm', 'no'];
 var badPeople = [
   'shreeda',
@@ -45,3 +45,11 @@ var badPeople = [
   'the_langrangian',
   'tipsycaek'
 ];
+
+var constants = {
+  subtypeWhitelist,
+  responses: { negative, positive, indifferent },
+  badPeople
+};
+
+module.exports = constants;
