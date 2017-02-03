@@ -43,10 +43,10 @@ var bot = controller.spawn({
 //
 // });
 
-controller.hears(['which channels (.*)'], 'direct_message,direct_mention,mention', function(bot, message) {
+controller.hears(['which channels(.*)'], 'direct_message,direct_mention,mention', function(bot, message) {
   var question = message.match[1];
 
-  if (question === 'are dead') {
+  if (question === ' are dead') {
     bot.deadChannels = [];
 
     bot.getDeadChannels(function(channel, isLast) {
@@ -85,11 +85,15 @@ controller.hears(['which channels (.*)'], 'direct_message,direct_mention,mention
   }
 });
 
-controller.hears(['who is lit'], 'direct_message,direct_mention,mention', function(bot, message) {
+controller.hears(['who is lit'], 'ambient,direct_message,direct_mention,mention', function(bot, message) {
   bot.reply(message, 'firebot is pretty lit');
 });
 
-controller.hears(['is (.*) lit', 'is (.*) lit right now', 'is (.*) lit rn', 'am i lit', 'are (.*) lit'], 'ambient,direct_message,direct_mention,mention', function(bot, message) {
+controller.hears(['am i lit'], 'ambient,direct_message,direct_mention,mention', function(bot, message) {
+  bot.reply(message, 'nope');
+});
+
+controller.hears(['is (.*) lit', 'is (.*) lit right now', 'is (.*) lit rn', 'are (.*) lit'], 'ambient,direct_message,direct_mention,mention', function(bot, message) {
   var channel = message.match[1];
 
   if (channel) {
@@ -106,6 +110,10 @@ controller.hears(['is (.*) lit', 'is (.*) lit right now', 'is (.*) lit rn', 'am 
         channel = channel.slice(pipeIndex + 1, channel.length - 1);
       } else if (channel[1] === '@') {
         /* Gets a user name from a mention */
+        if (!bot.allUsers) {
+          bot.allUsers = [];
+        }
+
         channel = channel.slice(2, channel.length - 1);
         for (var i = 0; i < bot.allUsers.length; i++) {
           if (bot.allUsers[i].id === channel) {
