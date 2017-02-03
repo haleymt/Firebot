@@ -1,8 +1,8 @@
 /* Main Firebot functionality */
 
 if (!process.env.token) {
-    console.log('Error: Specify token in environment');
-    process.exit(1);
+  console.log('Error: Specify token in environment');
+  process.exit(1);
 }
 
 var Botkit = require('botkit');
@@ -162,7 +162,7 @@ var Firebot = {
 
     /* Checks level of activity every 10 minutes (600000ms)*/
     var _this = this;
-    _this.checkInterval = setInterval( function () {
+    this.checkInterval = setInterval( function () {
       _this.recentActiveChannels = [];
 
       _this.getActivity('recent', function (channel, isLast) {
@@ -198,23 +198,22 @@ var Firebot = {
             _this.send({text: text, channel: "#isitlit"});
           }
         }
-      });
+      }.bind(_this));
 
     }, 600000);
   },
 
   getChannelList: function(callback) {
     /* Slack API call to get list of channels */
-    var _this = this;
     if (this.allChannels && this.allChannels.length) {
       callback(this.allChannels);
     } else {
       this.bot.api.channels.list({ token: this.bot.token }, function (err, res) {
         if (res && res.ok) {
-          _this.allChannels = res.channels;
+          this.allChannels = res.channels;
           callback(res.channels);
         }
-      });
+      }.bind(this));
     }
   },
 
