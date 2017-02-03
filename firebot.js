@@ -6,7 +6,7 @@ if (!process.env.token) {
 }
 
 var Botkit = require('botkit');
-var { subtypeWhitelist, responses, badPeople } = require('./constants');
+var { subtypeWhitelist, responses, peopleTypes } = require('./constants');
 
 var Firebot = {
   allUsers: [],
@@ -35,7 +35,7 @@ var Firebot = {
   },
 
   attachListeners: function(controller) {
-    controller.hears(['which channels(.*)'], 'direct_message,direct_mention,mention', function(bot, message) {
+    controller.hears(['which channels(.*)'], 'ambient,direct_message,direct_mention,mention', function(bot, message) {
       var question = message.match[1];
 
       if (question === ' are dead') {
@@ -85,7 +85,7 @@ var Firebot = {
       bot.reply(message, 'nope');
     });
 
-    controller.hears(['is (.*) lit', 'is (.*) lit right now', 'is (.*) lit rn', 'are (.*) lit'], 'ambient,direct_message,direct_mention,mention', function(bot, message) {
+    controller.hears(['is (.*) lit', 'are (.*) lit'], 'ambient,direct_message,direct_mention,mention', function(bot, message) {
       var channel = message.match[1];
 
       if (channel) {
@@ -115,27 +115,13 @@ var Firebot = {
           }
         }
 
-        if (channel === 'hales' || channel === 'firebot' || channel === 'haley') {
+        if (peopleTypes.custom[channel]) {
+          text = peopleTypes.custom[channel];
+        } else if (peopleTypes.good.indexOf(channel) > -1) {
           text = responses.positive[Math.floor(Math.random() * responses.positive.length)];
-        }
-
-        if (channel === 'beiser') {
-          text = 'lol fuck off';
-        }
-
-        if (channel === 'rev' || channel === 'st_rev') {
+        } else if (peopleTypes.meh.indexOf(channel) > -1) {
           text = responses.indifferent[Math.floor(Math.random() * responses.indifferent.length)];
-        }
-
-        if (channel === 'sarah' || channel === 'sarahsloth') {
-          text = 'they are a banana';
-        }
-
-        if (channel === 'gabe') {
-          text = ':hankey:';
-        }
-
-        if (badPeople.indexOf(channel) > -1) {
+        } else if (peopleTypes.bad.indexOf(channel) > -1) {
           text = responses.negative[Math.floor(Math.random() * responses.negative.length)];
         }
 
@@ -168,9 +154,15 @@ var Firebot = {
   },
 
   startInterval: function () {
+    /* Clears interval if it already exists */
+    if (this.checkInterval) {
+      clearInterval(this.checkInterval);
+      this.checkInterval = null;
+    }
+
     /* Checks level of activity every 10 minutes (600000ms)*/
     var _this = this;
-    var checkInterval = setInterval( function () {
+    _this.checkInterval = setInterval( function () {
       _this.recentActiveChannels = [];
 
       _this.getActivity(false, function (channel, isLast) {
