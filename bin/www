@@ -4,7 +4,7 @@
  * Module dependencies.
  */
 
-var app = require('../server');
+var app = require('../main');
 var debug = require('debug')('Firebot:server');
 var http = require('http');
 
