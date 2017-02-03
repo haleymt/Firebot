@@ -1,4 +1,4 @@
-/* FIREBOT */
+/* Main Firebot functionality */
 
 if (!process.env.token) {
     console.log('Error: Specify token in environment');
