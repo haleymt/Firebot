@@ -41,7 +41,7 @@ var Firebot = {
       if (question === ' are dead') {
         this.deadChannels = [];
 
-        this.getDeadChannels(function(channel, isLast) {
+        this.getActivity('dead', function(channel, isLast) {
           if (channel) {
             this.deadChannels.push(channel);
           }
@@ -59,7 +59,7 @@ var Firebot = {
       } else {
         this.dailyActiveChannels = [];
 
-        this.getActivity(true, function (channel, isLast) {
+        this.getActivity('daily', function (channel, isLast) {
           if (channel) {
             this.dailyActiveChannels.push(channel);
           }
@@ -165,7 +165,7 @@ var Firebot = {
     _this.checkInterval = setInterval( function () {
       _this.recentActiveChannels = [];
 
-      _this.getActivity(false, function (channel, isLast) {
+      _this.getActivity('recent', function (channel, isLast) {
         if (channel) {
           _this.recentActiveChannels.push(channel);
 
@@ -218,12 +218,13 @@ var Firebot = {
     }
   },
 
-  getChannelHistory: function(channel, isLast, daily, callback) {
+  getChannelHistory: function(channel, isLast, type, callback) {
     /* milliseconds in a day === 86400000 */
     /* milliseconds in 15 minutes === 900000 */
-    var offset = daily ? 86400000 : 900000;
-    var messageMinimum = daily ? 19 : 9;
+
+    var offset = type === 'daily' ? 86400000 : type === 'dead' ? 86400000 * 7 : 900000;
     var oldestTime = (new Date().getTime() - offset) / 1000;
+    var messageMinimum = type === 'daily' ? 19 : type === 'dead' ? null : 9;
 
     this.bot.api.channels.history({
       token: this.bot.token,
@@ -231,7 +232,12 @@ var Firebot = {
       oldest: oldestTime,
       count: 50,
     }, function(err, res) {
-      if (res && res.ok && res.messages && this.channelIsActive(res.messages, messageMinimum)) {
+      if (res &&
+          res.ok &&
+          res.messages &&
+          ((!messageMinimum && !res.messages.length) ||
+          (messageMinimum && this.channelIsActive(res.messages, messageMinimum))
+        ) {
         callback(channel, isLast);
       } else if (isLast) {
         callback(false, isLast)
@@ -239,42 +245,14 @@ var Firebot = {
     }.bind(this));
   },
 
-  getDeadChannelHistory: function (channel, isLast, callback) {
-    var weekAgo = (new Date().getTime() - (86400000 * 7)) / 1000;
-
-    this.bot.api.channels.history({
-      token: this.bot.token,
-      channel: channel.id,
-      oldest: weekAgo,
-      count: 10
-    }, function(err, res) {
-      if (res && res.ok && res.messages && !res.messages.length) {
-        callback(channel, isLast);
-      } else if (isLast) {
-        callback(false, isLast);
-      }
-    });
-  },
-
-  getActivity: function(daily, callback) {
+  getActivity: function(type, callback) {
     /* Gets list of channels with more than X messages in the last day */
 
     this.getChannelList(function (channels) {
       if (channels) {
         for (var i = 0; i < channels.length; i++) {
           var isLast = i === channels.length - 1;
-          this.getChannelHistory(channels[i], isLast, daily, callback);
-        }
-      }
-    }.bind(this));
-  },
-
-  getDeadChannels: function(callback) {
-    this.getChannelList(function (channels) {
-      if (channels) {
-        for (var i = 0; i < channels.length; i++) {
-          var isLast = i === channels.length - 1;
-          this.getDeadChannelHistory(channels[i], isLast, callback);
+          this.getChannelHistory(channels[i], isLast, type, callback);
         }
       }
     }.bind(this));
@@ -307,46 +285,30 @@ var Firebot = {
 
   formatBotText: function (channelList, type) {
     var text = 'The ';
+    var pastTense = type === 'daily' || type === 'revived';
     var channelName;
 
-    if (type === 'daily' || type === 'revived') {
-      for (var i = 0; i < channelList.length; i++) {
-        channelName = this.getChannelText(channelList[i].name);
-        if (channelList.length === 1) {
-          text += `${channelName} channel was `;
-        } else if (i === channelList.length - 1) {
-          text += ` and ${channelName} channels were `;
-        } else if (i === channelList.length - 2) {
-          text += `${channelName}`;
-        } else {
-          text += `${channelName}, `;
-        }
-      }
-
-      if (type === 'daily') {
-        text += 'busy today.';
+    for (var i = 0; i < channelList.length; i++) {
+      channelName = this.getChannelText(channelList[i].name);
+      if (channelList.length === 1) {
+        text += `${channelName} channel ${pastTense ? 'was' : 'is'} `;
+      } else if (i === channelList.length - 1) {
+        text += ` and ${channelName} channels ${pastTense ? 'were' : 'are'} `;
+      } else if (i === channelList.length - 2) {
+        text += `${channelName}`;
       } else {
-        text += 'revived!!!';
+        text += `${channelName}, `;
       }
+    }
+
+    if (type === 'daily') {
+      text += 'busy today.';
+    } else if (type === 'revived') {
+      text += 'revived!!!';
+    } else if (type === 'dead') {
+      text += 'pretty dead. No new posts in the last week.'
     } else {
-      for (var i = 0; i < channelList.length; i++) {
-        channelName = this.getChannelText(channelList[i].name);
-        if (channelList.length === 1) {
-          text += `${channelName} channel is `;
-        } else if (i === channelList.length - 1) {
-          text += ` and ${channelName} channels are `;
-        } else if (i === channelList.length - 2) {
-          text += `${channelName}`;
-        } else {
-          text += `${channelName}, `;
-        }
-      }
-
-      if (type === 'dead') {
-        text += 'pretty dead. No new posts in the last week.'
-      } else {
-        text += 'lit right now.';
-      }
+      text += 'lit right now.';
     }
 
     return text;
