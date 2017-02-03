@@ -909,6 +909,10 @@ export interface IUniversalBotSettings {
 
 /** Implemented by connector plugins for the UniversalBot. */
 export interface IConnector {
+
+    /** Used to register a handler for receiving incoming invoke events. */
+    onInvoke?(handler: (event: IEvent, cb?: (err: Error, body: any, status?: number) => void) => void): void;
+
     /** Called by the UniversalBot at registration time to register a handler for receiving incoming events from a channel. */
     onEvent(handler: (events: IEvent[], callback?: (err: Error) => void) => void): void;
 
@@ -3014,6 +3018,13 @@ export class UniversalBot extends Library  {
      */
     isInConversation(address: IAddress, callback: (err: Error, lastAccess: Date) => void): void;
 
+    /** 
+     * Loads a session object for an arbitrary address. 
+     * @param address Address of the user/session to load. This should be saved during a previous conversation with the user.
+     * @param callback Function to invoke with the loaded session.
+     */
+    loadSession(address: IAddress, callback: (err: Error, session: Session) => void): void;
+
     /**
      * Replaces the bots default route disambiguation logic with a custom implementation.
      * @param handler Function that will be invoked with the candidate routes to dispatch an incoming message to. 
@@ -3032,6 +3043,9 @@ export class ChatConnector implements IConnector, IBotStorage {
 
     /** Registers an Express or Restify style hook to listen for new messages. */
     listen(): (req: any, res: any) => void;
+
+    /** Used to register a handler for receiving incoming invoke events. */
+    onInvoke(handler: (event: IEvent, cb?: (err: Error, body: any, status?: number) => void) => void): void;
 
     /** Called by the UniversalBot at registration time to register a handler for receiving incoming events from a channel. */
     onEvent(handler: (events: IEvent[], callback?: (err: Error) => void) => void): void;
@@ -3057,6 +3071,9 @@ export class ConsoleConnector implements IConnector {
     /** Sends a message through the connector. */
     processMessage(line: string): ConsoleConnector;
     
+    /** Used to register a handler for receiving incoming invoke events. */
+    onInvoke(handler: (event: IEvent, cb?: (err: Error, body: any, status?: number) => void) => void): void;
+
     /** Called by the UniversalBot at registration time to register a handler for receiving incoming events from a channel. */
     onEvent(handler: (events: IEvent[], callback?: (err: Error) => void) => void): void;
     
