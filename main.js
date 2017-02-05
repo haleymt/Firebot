@@ -27,10 +27,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', routes);
 app.use('/users', users);
 
-// handle Slack authentication
-app.get('/auth', (req, res) =>{
-    res.sendFile(__dirname + '/add_to_slack.html')
-});
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
