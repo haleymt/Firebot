@@ -145,27 +145,30 @@ var Firebot = {
             channel = channel.slice(pipeIndex + 1, channel.length - 1);
           } else if (channel[1] === '@') {
             /* Gets a user name from a mention */
-            if (!bot.allUsers) {
-              bot.allUsers = [];
-            }
-
             channel = channel.slice(2, channel.length - 1);
-            for (var i = 0; i < bot.allUsers.length; i++) {
-              if (bot.allUsers[i].id === channel) {
-                channel = bot.allUsers[i].name;
-              }
-            }
           }
         }
 
-        if (peopleTypes.custom[channel]) {
-          text = peopleTypes.custom[channel];
-        } else if (peopleTypes.good.indexOf(channel) > -1) {
-          text = responses.positive[Math.floor(Math.random() * responses.positive.length)];
-        } else if (peopleTypes.meh.indexOf(channel) > -1) {
-          text = responses.indifferent[Math.floor(Math.random() * responses.indifferent.length)];
-        } else if (peopleTypes.bad.indexOf(channel) > -1) {
-          text = responses.negative[Math.floor(Math.random() * responses.negative.length)];
+        if (!bot.allUsers) {
+          bot.allUsers = [];
+        }
+
+        for (var i = 0; i < bot.allUsers.length; i++) {
+          if (bot.allUsers[i].id === channel || bot.allUsers[i].name === channel) {
+            channel = bot.allUsers[i].name;
+
+            if (peopleTypes.custom[channel]) {
+              text = peopleTypes.custom[channel];
+            } else if (peopleTypes.good.indexOf(channel) > -1) {
+              text = responses.positive[Math.floor(Math.random() * responses.positive.length)];
+            } else if (peopleTypes.meh.indexOf(channel) > -1) {
+              text = responses.indifferent[Math.floor(Math.random() * responses.indifferent.length)];
+            } else if (peopleTypes.bad.indexOf(channel) > -1) {
+              text = responses.negative[Math.floor(Math.random() * responses.negative.length)];
+            } else {
+              text = responses.grabBag[Math.floor(Math.random() * responses.grabBag.length)];
+            }
+          }
         }
 
         if (bot.hourlyActivity[channel]) {
