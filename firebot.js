@@ -53,7 +53,7 @@ var Firebot = {
         throw new Error(err);
       }
 
-      // connect all teams with bots up to slack!
+      // Connect all teams with bots up to slack
       for (var t in teams) {
         if (teams[t].bot) {
           var bot = controller.spawn(teams[t]);
@@ -90,11 +90,9 @@ var Firebot = {
           }
 
           if (isLast) {
-            var deadText;
+            var deadText = "No dead channels right now.";
             if (bot.deadChannels.length) {
               deadText = this.formatBotText(bot, bot.deadChannels, "dead");
-            } else {
-              deadText = "No dead channels right now."
             }
             bot.reply(message, deadText);
           }
@@ -108,12 +106,10 @@ var Firebot = {
           }
 
           if (isLast) {
-            var text;
+            var text = "No channels have been busy lately.";
             if (bot.dailyActiveChannels.length) {
               text = this.formatBotText(bot, bot.dailyActiveChannels, "daily");
-            } else {
-              text = "No channels have been busy lately."
-            }
+            } 
             bot.reply(message, text);
           }
         }.bind(this));
