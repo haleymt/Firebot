@@ -7,7 +7,8 @@ if (!process.env.clientId || !process.env.clientSecret || !process.env.port) {
 }
 
 var Botkit = require('botkit');
-var { subtypeWhitelist, responses, peopleTypes } = require('./constants');
+var router = require('./routes/index');
+var { subtypeWhitelist, responses, peopleTypes, hostname } = require('./constants');
 
 var Firebot = {
   bots: {},
@@ -23,6 +24,9 @@ var Firebot = {
       retry: Infinity,
     });
 
+    controller.webserver = router;
+    controller.config.port = process.env.port;
+
     this.setUpController(controller);
   },
 
@@ -34,18 +38,18 @@ var Firebot = {
       scopes: ['channels:history','incoming-webhook','team:read','users:read','chat:write:bot', 'bot','channels:read','im:read','im:write','groups:read','emoji:read']
     });
 
-    controller.setupWebserver(process.env.port, function(err, webserver) {
-      controller
-        .createHomepageEndpoint(controller.webserver)
-        .createOauthEndpoints(controller.webserver, function(err,req,res) {
-          if (err) {
-            res.status(500).send('ERROR: ' + err);
-          } else {
-            res.send('Success!');
-          }
-        })
-        .createWebhookEndpoints(controller.webserver);
-    });
+    controller.createOauthEndpoints(controller.webserver, function(err,req,res) {
+      if (err) {
+        res.status(err.status || 500);
+        res.render('error', {
+          message: err.message,
+          error: {}
+        });
+      } else {
+        res.render('success');
+      }
+    })
+    .createWebhookEndpoints(controller.webserver);
 
     controller.storage.teams.all(function(err, teams) {
 
@@ -109,7 +113,7 @@ var Firebot = {
             var text = "No channels have been busy lately.";
             if (bot.dailyActiveChannels.length) {
               text = this.formatBotText(bot, bot.dailyActiveChannels, "daily");
-            } 
+            }
             bot.reply(message, text);
           }
         }.bind(this));

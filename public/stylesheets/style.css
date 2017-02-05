@@ -5,7 +5,7 @@ body {
   justify-content: space-around;
   min-height: 100vh;
   min-width: 100vh;
-  background: rgba(255, 153, 0, 0.5);
+  background: rgba(255, 153, 0, 0.75);
 }
 
 a {
@@ -25,6 +25,23 @@ a:hover {
   background: rgba(255,255,255,0.9);
 }
 
-.container p {
+/*.container p {
+  text-align: left;
+}*/
+
+h1.success {
+  color: rgb(47, 163, 85);
+}
+
+h1.error {
+  color: rgb(242, 83, 72);
+}
+
+pre.error {
+  display: block;
+  padding: 15px;
+  border-radius: 5px;
+  background-color: rgba(242, 191, 72, 0.2);
+  border: 1px solid rgba(242, 83, 72, 0.5);
   text-align: left;
 }

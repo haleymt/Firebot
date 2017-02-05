@@ -1,3 +1,5 @@
+var hostname = process.env.port === '3000' ? 'localhost' : 'firebot-dev.us-west-2.elasticbeanstalk.com';
+
 var subtypeWhitelist = ['file_comment', 'file_mention', 'file_share', 'message_replied', 'reply_broadcast'];
 var negative = ['no', 'no.', 'nope', 'not at all', 'no, only hales', 'uh..', 'lol', 'sorry man', 'meh', 'nah', 'ha', 'never', 'definitely not'];
 var positive = ['very much so', 'absolutely', 'def', 'ya'];
@@ -54,6 +56,7 @@ custom = {
 };
 
 var constants = {
+  hostname,
   subtypeWhitelist,
   responses: { negative, positive, indifferent },
   peopleTypes: { good, bad, meh, custom },

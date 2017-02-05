@@ -1,6 +1,9 @@
 extends layout
 
 block content
-  h1= message
-  h2= error.status
-  pre #{error.stack}
+  .container
+    img(src="/images/ios_emoji_fire.png" height="120" width="120")
+    h1.error Sorry!
+    p The site ran into a problem. Here's the error:
+    pre.error
+      code= message
