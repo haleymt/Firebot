@@ -23,13 +23,25 @@ a:hover {
   padding: 50px;
   text-align: center;
   border-radius: 5px;
-  border: 1px solid rgba(0,0,0,0.2);
-  background: rgba(255,255,255,1);
+  /*border: 1px solid rgba(0,0,0,0.2);*/
+  background: rgba(255,255,255);
 }
 
 .section {
   text-align: left;
   padding-top: 20px;
+}
+
+.subsection {
+  padding: 0px 20px;
+}
+
+.subsection p {
+  margin-bottom: 0px;
+}
+
+ol {
+  padding-left: 20px;
 }
 
 /*.container p {
@@ -51,6 +63,7 @@ pre.error {
   background-color: rgba(242, 191, 72, 0.2);
   border: 1px solid rgba(242, 83, 72, 0.5);
   text-align: left;
+  word-wrap: break-word;
 }
 
 p.description {
@@ -59,5 +72,25 @@ p.description {
 }
 
 li {
+  margin-top: 15px;
+}
+
+.subsection img,
+.image-div {
+  border-radius: 5px;
+  border: 1px solid rgba(0,0,0,0.2);
+  width: 100%;
+}
+
+.subsection img {
+  margin: 10px auto;
+  margin-bottom: 0px;
+}
+
+.image-div {
+  background-position: center !important;
+  background-size: cover !important;
+  background-repeat: no-repeat !important;
+  height: 100px;
   margin-top: 10px;
 }

@@ -8,7 +8,7 @@ if (!process.env.clientId || !process.env.clientSecret || !process.env.port) {
 
 var Botkit = require('botkit');
 var router = require('./routes/index');
-var { subtypeWhitelist, responses, peopleTypes, hostname } = require('./constants');
+var { subtypeWhitelist, responses, peopleTypes, hostname, historyConfig, defaultInterval } = require('./constants');
 
 var Firebot = {
   bots: {},
@@ -35,7 +35,7 @@ var Firebot = {
     controller.configureSlackApp({
       clientId: process.env.clientId,
       clientSecret: process.env.clientSecret,
-      redirectUri: 'http://localhost:3000/oauth',
+      redirectUri: hostname + '/oauth',
       scopes: ['channels:history','incoming-webhook','team:read','users:read','chat:write:bot', 'bot','channels:read','im:read','im:write','groups:read','emoji:read']
     });
 
@@ -285,7 +285,7 @@ var Firebot = {
         }
 
         if (isLast) {
-          /* Only announces channels that haven't been announced in the last hour */
+          /* Only announces channels that haven't been announced in the last half hour */
           var filteredChannels = [];
           for (var i = 0; i < bot.recentActiveChannels.length; i++) {
             if (bot.hourlyActivity[bot.recentActiveChannels[i].name] === 1) {
@@ -310,7 +310,7 @@ var Firebot = {
         }
       }.bind(_this));
 
-    }, 600000);
+    }, defaultInterval);
   },
 
   getChannelList: function(bot, callback) {
@@ -328,12 +328,8 @@ var Firebot = {
   },
 
   getChannelHistory: function(bot, channel, type, onComplete) {
-    /* milliseconds in a day === 86400000 */
-    /* milliseconds in 15 minutes === 900000 */
-
-    var offset = type === 'daily' ? 86400000 : type === 'dead' ? 86400000 * 7 : 900000;
-    var oldestTime = (new Date().getTime() - offset) / 1000;
-    var messageMinimum = type === 'daily' ? 19 : type === 'dead' ? null : 9;
+    var { timeOffset, messageMinimum } = historyConfig[type];
+    var oldestTime = (new Date().getTime() - timeOffset) / 1000;
 
     bot.api.channels.history({
       token: bot.config.bot.app_token,
