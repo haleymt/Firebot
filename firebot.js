@@ -18,19 +18,20 @@ var Firebot = {
   },
 
   run: function () {
-    var controller = Botkit.slackbot({
+    this.controller = Botkit.slackbot({
       json_file_store: './db_firebot/',
       debug: true,
       retry: Infinity,
     });
 
-    controller.webserver = router;
-    controller.config.port = process.env.port;
+    this.controller.webserver = router;
+    this.controller.config.port = process.env.port;
 
-    this.setUpController(controller);
+    this.setUpController();
   },
 
-  setUpController: function(controller) {
+  setUpController: function() {
+    var { controller } = this;
     controller.configureSlackApp({
       clientId: process.env.clientId,
       clientSecret: process.env.clientSecret,
@@ -66,11 +67,12 @@ var Firebot = {
       }
     }.bind(this));
 
-    this.attachListeners(controller);
-    this.controller = controller;
+    this.attachEventListeners();
+    this.attachConversationListeners();
   },
 
-  attachListeners: function(controller) {
+  attachEventListeners: function() {
+    var { controller } = this;
     controller.on('create_team', function(team) {
       var bot = controller.spawn(team);
       this.setUpBot(bot);
@@ -82,18 +84,36 @@ var Firebot = {
       }
     }.bind(this));
 
+    controller.on('channel_created', function(bot,res) {
+      if (res && res.channel) {
+        bot.allChannels.push(res.channel);
+      }
+    });
+
+    controller.on('channel_archive', function(bot,res) {
+      for (var c in bot.allChannels) {
+        if (bot.allChannels[c].id === res.channel) {
+          bot.allChannels.splice(c, 1);
+        }
+      }
+    });
+  },
+
+  attachConversationListeners: function() {
+    var { controller } = this;
+
     controller.hears(['which channels(.*)'], 'ambient,direct_message,direct_mention,mention', function(bot, message) {
       var question = message.match[1];
 
       if (question === ' are dead') {
         bot.deadChannels = [];
 
-        this.getChannelActivity(bot, 'dead', function(channel, isLast) {
+        this.getChannelActivity(bot, 'dead', function(channel, isComplete) {
           if (channel) {
             bot.deadChannels.push(channel);
           }
 
-          if (isLast) {
+          if (isComplete) {
             var deadText = "No dead channels right now.";
             if (bot.deadChannels.length) {
               deadText = this.formatBotText(bot, bot.deadChannels, "dead");
@@ -103,13 +123,12 @@ var Firebot = {
         }.bind(this));
       } else {
         bot.dailyActiveChannels = [];
-
-        this.getChannelActivity(bot, 'daily', function (channel, isLast) {
+        this.getChannelActivity(bot, 'daily', function (channel, isComplete) {
           if (channel) {
             bot.dailyActiveChannels.push(channel);
           }
 
-          if (isLast) {
+          if (isComplete) {
             var text = "No channels have been busy lately.";
             if (bot.dailyActiveChannels.length) {
               text = this.formatBotText(bot, bot.dailyActiveChannels, "daily");
@@ -126,7 +145,7 @@ var Firebot = {
 
     controller.hears(['am i lit'], 'ambient,direct_message,direct_mention,mention', function(bot, message) {
       bot.reply(message, 'nope');
-    });
+    }.bind(this));
 
     controller.hears(['is (.*) lit', 'are (.*) lit'], 'ambient,direct_message,direct_mention,mention', function(bot, message) {
       var channel = message.match[1];
@@ -147,10 +166,6 @@ var Firebot = {
             /* Gets a user name from a mention */
             channel = channel.slice(2, channel.length - 1);
           }
-        }
-
-        if (!bot.allUsers) {
-          bot.allUsers = [];
         }
 
         for (var i = 0; i < bot.allUsers.length; i++) {
@@ -213,7 +228,7 @@ var Firebot = {
           this.trackBot(bot);
           this.startInterval(bot);
           if (isNew) {
-            bot.sendWebhook({text: `Thanks for adding Firebot! Invite <@${bot.config.bot.user_id}> to a channel so I can start posting about activity`, channel: bot.config.incoming_webhook.channel });
+            bot.sendWebhook({text: `Thanks for adding Firebot! Invite <@${bot.config.bot.user_id}> to a channel so I can start posting about activity. We recommend having a dedicated channel for Firebot announcements.`, channel: bot.config.incoming_webhook.channel });
           }
         }
       }
@@ -284,7 +299,7 @@ var Firebot = {
     }
   },
 
-  getChannelHistory: function(bot, channel, isLast, type, callback) {
+  getChannelHistory: function(bot, channel, type, onComplete) {
     /* milliseconds in a day === 86400000 */
     /* milliseconds in 15 minutes === 900000 */
 
@@ -298,11 +313,8 @@ var Firebot = {
       oldest: oldestTime,
       count: 50,
     }, function(err, res) {
-      if (res && res.ok && res.messages && ((!messageMinimum && !res.messages.length) || (messageMinimum && this.channelIsActive(res.messages, messageMinimum)))) {
-        callback(channel, isLast);
-      } else if (isLast) {
-        callback(false, isLast)
-      }
+      var isValid = res && res.ok && res.messages && ((!messageMinimum && !res.messages.length) || (messageMinimum && this.channelIsActive(res.messages, messageMinimum)));
+      onComplete(isValid);
     }.bind(this));
   },
 
@@ -310,11 +322,26 @@ var Firebot = {
     /* Gets list of channels with more than X messages in the last day */
 
     this.getChannelList(bot, function (channels) {
+      var idx = 0;
+      var loopArray = function(arr) {
+        this.getChannelHistory(bot, channels[idx], type, function(isValid) {
+          var isLast = idx === arr.length - 1;
+          if (isValid) {
+            callback(channels[idx], isLast);
+          } else if (isLast) {
+            callback(false, isLast);
+          }
+
+          idx++;
+
+          if (idx < arr.length) {
+            loopArray(arr);
+          }
+        }.bind(this));
+      }.bind(this)
+
       if (channels) {
-        for (var i = 0; i < channels.length; i++) {
-          var isLast = i === channels.length - 1;
-          this.getChannelHistory(bot, channels[i], isLast, type, callback);
-        }
+        loopArray(channels);
       }
     }.bind(this));
   },
@@ -335,13 +362,17 @@ var Firebot = {
       if (users.indexOf(messages[i].user) < 0) {
         users.push(messages[i].user);
       }
-
-      if (messageCount > minimum && users.length > 1) {
-        return true;
-      }
     }
 
     return messageCount > minimum && users.length > 1;
+  },
+
+  formatMessage: function(text) {
+    return {
+      text,
+      username: 'firebot_nametest',
+      icon_emoji: ':fire:'
+    };
   },
 
   formatBotText: function (bot, channelList, type) {
