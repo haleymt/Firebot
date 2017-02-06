@@ -96,6 +96,27 @@ var Firebot = {
           bot.allChannels.splice(c, 1);
         }
       }
+
+      for (var ch in bot.memberChannels) {
+        if (bot.memberChannels[ch] === res.channel) {
+          bot.memberChannels.splice(ch, 1);
+        }
+      }
+    });
+
+    controller.on('bot_channel_join', function(bot, res) {
+      var bot_id = bot.config.bot.user_id;
+      if (res.user === bot_id) {
+        bot.memberChannels.push(res.channel);
+      }
+    });
+
+    controller.on('channel_left', function(bot, res) {
+      for (var ch in bot.memberChannels) {
+        if (bot.memberChannels[ch] === res.channel) {
+          bot.memberChannels.splice(ch, 1);
+        }
+      }
     });
   },
 
@@ -204,12 +225,17 @@ var Firebot = {
         bot.hourlyActivity = {};
         bot.dailyActiveChannels = [];
         bot.recentActiveChannels = [];
+        bot.memberChannels = [];
 
         if (payload) {
           if (payload.channels) {
             payload.channels.forEach(function(channel) {
               if (!channel.is_archived) {
+                var bot_id = bot.config.bot.user_id;
                 bot.allChannels.push(channel);
+                if (channel.members && channel.members.indexOf(bot_id) > -1 && bot.memberChannels.indexOf(channel.id) < 0) {
+                  bot.memberChannels.push(channel.id);
+                }
               }
             }.bind(this));
           }
@@ -277,7 +303,9 @@ var Firebot = {
 
           if (filteredChannels.length) {
             var text = _this.formatBotText(bot, filteredChannels, "lit");
-            bot.send({ text, channel: bot.config.incoming_webhook.channel });
+            for (var c in bot.memberChannels) {
+              bot.send({ text, channel: bot.memberChannels[c] });
+            }
           }
         }
       }.bind(_this));
