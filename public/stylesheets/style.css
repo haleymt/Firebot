@@ -6,6 +6,7 @@ body {
   min-height: 100vh;
   min-width: 100vh;
   background: rgba(255, 153, 0, 0.75);
+  padding: 50px;
 }
 
 a {
@@ -17,12 +18,18 @@ a:hover {
 }
 
 .container {
-  width: 500px;
-  padding: 40px;
+  width: 80%;
+  max-width: 700px;
+  padding: 50px;
   text-align: center;
   border-radius: 5px;
   border: 1px solid rgba(0,0,0,0.2);
-  background: rgba(255,255,255,0.9);
+  background: rgba(255,255,255,1);
+}
+
+.section {
+  text-align: left;
+  padding-top: 20px;
 }
 
 /*.container p {
@@ -44,4 +51,13 @@ pre.error {
   background-color: rgba(242, 191, 72, 0.2);
   border: 1px solid rgba(242, 83, 72, 0.5);
   text-align: left;
+}
+
+p.description {
+  width: 400px;
+  margin: 20px auto;
+}
+
+li {
+  margin-top: 10px;
 }

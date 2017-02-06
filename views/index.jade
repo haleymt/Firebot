@@ -4,6 +4,25 @@ block content
   .container
     img(src="/images/ios_emoji_fire.png" height="120" width="120")
     h1 Firebot
-    p Firebot is a Slack App for keeping track of activity in your team's public channels. If a channel is particularly busy, Firebot will let you know. You can also use Firebot to find out which channels have been active or inactive recently.
+    p.description Firebot is a Slack App for keeping track of activity in your team's public channels. Really useful for busy, discussion-oriented Slack groups where you might find it hard to keep up with which channels to pay attention to.
     a(href="http://localhost:3000/login")
       img(alt="Add to Slack" height="40" width="139" src="https://platform.slack-edge.com/img/add_to_slack.png" srcset="https://platform.slack-edge.com/img/add_to_slack.png 1x, https://platform.slack-edge.com/img/add_to_slack@2x.png 2x")
+    .section
+      h2 How it works:
+      ol
+        <li>Click the <strong>Add to Slack</strong> button above, which will redirect you to a page where you can authorize the app. As soon as you click <strong>Authorize</strong>, the app will automatically be added to your team.</li>
+        <li>Invite the <strong>@firebot</strong> bot to any channel in which you'd like to receive announcements. I recommend having a dedicated channel for Firebot, especially if you're in a busy group.
+        li Firebot checks your team every 10 minutes for public (and only public) channels that have had at least 10 messages made by at least two people in the last 15 minutes. Firebot will only post about a channel if it hasn't done so in the last half hour. So if it tells you that #general is lit at 10 AM, it won't tell you about it again until 10:30, even if #general has been busy the whole time.
+        <li>The <strong>@firebot</strong> bot won't post any more than six times in an hour, but if you'd like it to stop, you can just remove the bot from any channel it's a member of. The app will still be installed and you can re-invite the bot at any time. 
+        li You can also ask Firebot directly about active channels, dead channels, and lit channels at any time:
+          <p><strong>which channels are active?</strong> returns a list of all channels that have been busy in the last 24 hours. "Busy" means at least 20 messages made by at least two people.</p>
+          <p><strong>which channels are dead?</strong> returns a list of channels that haven't been posted in for at least a week.</p>
+          <p><strong>is CHANNEL_NAME lit right now?</strong> will tell you whether the channel has been busy enough for Firebot to announce.</p>
+    .section
+      h2 FAQ
+      p
+        em How private is my data?
+        <div>In order to track activity, Firebot will be authorized to access some of your team's information, including channel information, user information, and some of your message history. It doesn't store your messages anywhere, or make your information available. But it's up to you if you feel comfortable adding the bot.</div>
+      p
+        em Is this open source?
+        <div>Yes. Feel free to submit issues or pull requests <a href="http://github.com/haleymt/Firebot">here</a>.</div>

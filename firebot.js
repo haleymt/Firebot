@@ -142,7 +142,7 @@ var Firebot = {
             bot.reply(message, deadText);
           }
         }.bind(this));
-      } else {
+      } else if (question === ' are active') {
         bot.dailyActiveChannels = [];
         this.getChannelActivity(bot, 'daily', function (channel, isComplete) {
           if (channel) {
