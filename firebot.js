@@ -241,13 +241,14 @@ var Firebot = {
         }
 
         if (err === "account_inactive") {
-          stopInterval(bot);
-          bot.closeRTM();
+          stop(bot);
         }
 
         if (!err) {
           this.trackBot(bot);
+          bot.is_active = true;
           startInterval(bot);
+
           if (isNew) {
             bot.sendWebhook({
               text: `Thanks for adding Firebot! Invite <@${bot.config.bot.user_id}> to a channel so it can start posting about activity. We recommend having a dedicated channel for Firebot announcements.`,
@@ -257,6 +258,20 @@ var Firebot = {
         }
       }
     }.bind(this));
+  }
+};
+
+function stop(bot) {
+  stopInterval(bot);
+  bot.closeRTM();
+  bot.is_active = false;
+};
+
+function restart(bot) {
+  if (!bot.is_active) {
+    setUpBot(bot);
+  } else {
+    console.log('Firebot is already active');
   }
 };
 

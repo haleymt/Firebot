@@ -1,8 +1,8 @@
 body {
   font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
   display: flex;
-  align-items: center;
-  justify-content: space-around;
+  flex-direction: column;
+  justify-content: center;
   min-height: 100vh;
   min-width: 100vh;
   background: rgba(255, 153, 0, 0.75);
@@ -18,7 +18,7 @@ a:hover {
 }
 
 .container {
-  width: 80%;
+  width: 80vw;
   max-width: 700px;
   padding: 50px;
   text-align: center;
@@ -70,6 +70,12 @@ pre.error {
 p.description {
   width: 400px;
   margin: 20px auto;
+}
+
+p.credit {
+  color: rgba(255,255,255,0.85);
+  text-align: center;
+  margin-bottom: 50px;
 }
 
 li {
