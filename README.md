@@ -39,13 +39,14 @@ or you just want to customize it with weird things, a custom integration is the 
 2. Download the `firebot_ci` folder from this repository. From there you can run it in two ways:
 
 ### Firebot as its own app
-`firebot_ci` is just a basic Express app. To host it locally or on its own server, do the following:  
+`firebot_ci` is just a basic Express app. To host it locally or on its own server, do the following:    
+
 1. Run `npm install`  
 2. Create a file called `.env` and add your `token` to it. You'll also need to define the port. Your `.env` file should look like this:
 ```
 token="XXXXXXX-XXXXXXXXX-XXXXXXXXX"
 port=3000
-```
+```  
 3. If you'd like to host the bot on it's own server, deploy it as you would any other app. If you only want to host it on your local server, run `npm start` in the command line. As long as your local server is up on your computer, the bot will work in your Slack group.
 4. Before pushing any edits, be sure to either add `.env` to a `.gitignore` file, remove `.env` from your repository, or simply delete your token from `.env`. Pushing your `token` to a code repository will cause it to become invalid (you can get a new one, but that's a pain). If you're using Firebot on its own server, be sure to remove your `node_modules` too. Your `.gitignore` should look like this:
 ```
@@ -54,7 +55,8 @@ node_modules/*
 ```
 
 ### Firebot in another app
-Firebot is not yet available as a package on npm. If you'd like to run it within an app you already have, do the following:
+Firebot is not yet available as a package on npm. If you'd like to run it within an app you already have, do the following:  
+
 1. Include the latest version of Botkit in your `package.json`.  
 2. Include the `firebot.js` file somewhere in your application.  
 3. Include your `token` in your `process.env`.  
