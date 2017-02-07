@@ -21,7 +21,7 @@ var Firebot = {
     /* This is really really basic data storage. Find a better solution */
     this.controller = Botkit.slackbot({
       json_file_store: './db_firebot/',
-      debug: true,
+      debug: process.env.IS_DEV,
       retry: Infinity,
     });
 
@@ -203,7 +203,7 @@ var Firebot = {
         }
 
         if (bot.hourlyActivity[channel]) {
-          var text = channel === 'politics' ? 'no, but yes' : 'yep';
+          text = channel === 'politics' ? 'no, but yes' : 'yep';
         }
 
         bot.reply(message, text);
