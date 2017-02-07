@@ -8,7 +8,7 @@ if (!process.env.clientId || !process.env.clientSecret || !process.env.port) {
 
 var Botkit = require('botkit');
 var router = require('./routes/index');
-var { subtypeWhitelist, responses, peopleTypes, hostname, historyConfig, defaultInterval } = require('./constants');
+var { subtypeWhitelist, responses, peopleTypes, hostName, historyConfig, defaultInterval } = require('./constants');
 
 var Firebot = {
   bots: {},
@@ -18,6 +18,7 @@ var Firebot = {
   },
 
   run: function () {
+    /* This is really really basic data storage. Find a better solution */
     this.controller = Botkit.slackbot({
       json_file_store: './db_firebot/',
       debug: true,
@@ -32,10 +33,11 @@ var Firebot = {
 
   setUpController: function() {
     var { controller } = this;
+
     controller.configureSlackApp({
       clientId: process.env.clientId,
       clientSecret: process.env.clientSecret,
-      redirectUri: hostname + '/oauth',
+      redirectUri: hostName + '/oauth',
       scopes: ['channels:history','incoming-webhook','team:read','users:read','chat:write:bot', 'bot','channels:read','im:read','im:write','groups:read','emoji:read']
     });
 
@@ -58,7 +60,7 @@ var Firebot = {
         throw new Error(err);
       }
 
-      // Connect all teams with bots up to slack
+      /* Connect all teams with bots up to slack */
       for (var t in teams) {
         if (teams[t].bot) {
           var bot = controller.spawn(teams[t]);
@@ -125,40 +127,33 @@ var Firebot = {
 
     controller.hears(['which channels(.*)'], 'ambient,direct_message,direct_mention,mention', function(bot, message) {
       var question = message.match[1];
+      var type;
 
       if (question === ' are dead') {
-        bot.deadChannels = [];
-
-        this.getChannelActivity(bot, 'dead', function(channel, isComplete) {
-          if (channel) {
-            bot.deadChannels.push(channel);
-          }
-
-          if (isComplete) {
-            var deadText = "No dead channels right now.";
-            if (bot.deadChannels.length) {
-              deadText = this.formatBotText(bot, bot.deadChannels, "dead");
-            }
-            bot.reply(message, deadText);
-          }
-        }.bind(this));
+        type = 'dead';
       } else if (question === ' are active') {
-        bot.dailyActiveChannels = [];
-        this.getChannelActivity(bot, 'daily', function (channel, isComplete) {
+        type = 'daily';
+      }
+
+      if (type) {
+        var { channelList, emptyListText } = historyConfig[type];
+
+        bot[channelList] = [];
+        getChannelActivity(bot, type, function(channel, isComplete) {
           if (channel) {
-            bot.dailyActiveChannels.push(channel);
+            bot[channelList].push(channel);
           }
 
           if (isComplete) {
-            var text = "No channels have been busy lately.";
-            if (bot.dailyActiveChannels.length) {
-              text = this.formatBotText(bot, bot.dailyActiveChannels, "daily");
+            var text = emptyListText;
+            if (bot[channelList].length) {
+              text = formatBotText(bot, bot[channelList], type);
             }
             bot.reply(message, text);
           }
-        }.bind(this));
+        });
       }
-    }.bind(this));
+    });
 
     controller.hears(['who is lit'], 'ambient,direct_message,direct_mention,mention', function(bot, message) {
       bot.reply(message, 'firebot is pretty lit');
@@ -166,7 +161,7 @@ var Firebot = {
 
     controller.hears(['am i lit'], 'ambient,direct_message,direct_mention,mention', function(bot, message) {
       bot.reply(message, 'nope');
-    }.bind(this));
+    });
 
     controller.hears(['is (.*) lit', 'are (.*) lit'], 'ambient,direct_message,direct_mention,mention', function(bot, message) {
       var channel = message.match[1];
@@ -213,10 +208,10 @@ var Firebot = {
 
         bot.reply(message, text);
       }
-    }.bind(this));
+    });
   },
 
-  setUpBot: function (bot, isNew) {
+  setUpBot: function(bot, isNew) {
     bot.startRTM(function(err, bot, payload) {
       if (bot) {
         bot.allUsers = [];
@@ -237,7 +232,7 @@ var Firebot = {
                   bot.memberChannels.push(channel.id);
                 }
               }
-            }.bind(this));
+            });
           }
 
           if (payload.users) {
@@ -246,203 +241,214 @@ var Firebot = {
         }
 
         if (err === "account_inactive") {
+          stopInterval(bot);
           bot.closeRTM();
-          bot.destroy();
         }
 
         if (!err) {
           this.trackBot(bot);
-          this.startInterval(bot);
+          startInterval(bot);
           if (isNew) {
-            bot.sendWebhook({text: `Thanks for adding Firebot! Invite <@${bot.config.bot.user_id}> to a channel so I can start posting about activity. We recommend having a dedicated channel for Firebot announcements.`, channel: bot.config.incoming_webhook.channel });
+            bot.sendWebhook({
+              text: `Thanks for adding Firebot! Invite <@${bot.config.bot.user_id}> to a channel so it can start posting about activity. We recommend having a dedicated channel for Firebot announcements.`,
+              channel: bot.config.incoming_webhook.channel
+            });
           }
         }
       }
     }.bind(this));
-  },
-
-  startInterval: function (bot) {
-    /* Clears interval if it already exists */
-    if (bot.checkInterval) {
-      clearInterval(bot.checkInterval);
-      bot.checkInterval = null;
-    }
-
-    /* Checks level of activity every 10 minutes (600000ms)*/
-    var _this = this;
-    bot.checkInterval = setInterval( function () {
-      bot.recentActiveChannels = [];
-
-      _this.getChannelActivity(bot, 'recent', function (channel, isLast) {
-        if (channel) {
-          bot.recentActiveChannels.push(channel);
-
-          if (!bot.hourlyActivity[channel.name] || bot.hourlyActivity[channel.name] === 5) {
-            bot.hourlyActivity[channel.name] = 1;
-          } else {
-            bot.hourlyActivity[channel.name] += 1;
-          }
-        }
-
-        if (isLast) {
-          /* Only announces channels that haven't been announced in the last half hour */
-          var filteredChannels = [];
-          for (var i = 0; i < bot.recentActiveChannels.length; i++) {
-            if (bot.hourlyActivity[bot.recentActiveChannels[i].name] === 1) {
-              filteredChannels.push(bot.recentActiveChannels[i]);
-            }
-          }
-
-          /* If a channel wasn't active during the last tick, it resets the hourly count to 0 */
-          Object.keys(bot.hourlyActivity).forEach(function(key) {
-            if (!bot.recentActiveChannels.find(function(channel) { channel.name === key })) {
-              var value = bot.hourlyActivity[key];
-              bot.hourlyActivity[key] = value && value < 5 ? value + 1 : 0;
-            }
-          });
-
-          if (filteredChannels.length) {
-            var text = _this.formatBotText(bot, filteredChannels, "lit");
-            for (var c in bot.memberChannels) {
-              bot.send({ text, channel: bot.memberChannels[c] });
-            }
-          }
-        }
-      }.bind(_this));
-
-    }, defaultInterval);
-  },
-
-  getChannelList: function(bot, callback) {
-    /* Slack API call to get list of channels */
-    if (bot.allChannels && bot.allChannels.length) {
-      callback(bot.allChannels);
-    } else {
-      bot.api.channels.list({ token: bot.config.bot.app_token }, function (err, res) {
-        if (res && res.ok) {
-          bot.allChannels = res.channels;
-          callback(res.channels);
-        }
-      }.bind(this));
-    }
-  },
-
-  getChannelHistory: function(bot, channel, type, onComplete) {
-    var { timeOffset, messageMinimum } = historyConfig[type];
-    var oldestTime = (new Date().getTime() - timeOffset) / 1000;
-
-    bot.api.channels.history({
-      token: bot.config.bot.app_token,
-      channel: channel.id,
-      oldest: oldestTime,
-      count: 50,
-    }, function(err, res) {
-      var isValid = res && res.ok && res.messages && ((!messageMinimum && !res.messages.length) || (messageMinimum && this.channelIsActive(res.messages, messageMinimum)));
-      onComplete(isValid);
-    }.bind(this));
-  },
-
-  getChannelActivity: function(bot, type, callback) {
-    /* Gets list of channels with more than X messages in the last day */
-
-    this.getChannelList(bot, function (channels) {
-      var idx = 0;
-      var loopArray = function(arr) {
-        this.getChannelHistory(bot, channels[idx], type, function(isValid) {
-          var isLast = idx === arr.length - 1;
-          if (isValid) {
-            callback(channels[idx], isLast);
-          } else if (isLast) {
-            callback(false, isLast);
-          }
-
-          idx++;
-
-          if (idx < arr.length) {
-            loopArray(arr);
-          }
-        }.bind(this));
-      }.bind(this)
-
-      if (channels) {
-        loopArray(channels);
-      }
-    }.bind(this));
-  },
-
-  channelIsDead: function (bot, channel) {
-    return bot.deadChannels.find(function(ch) { return ch.id === channel.id });
-  },
-
-  channelIsActive: function (messages, minimum) {
-    var users = [];
-    var messageCount = 0;
-
-    for (var i = 0; i < messages.length; i++) {
-      if (!messages[i].subtype || subtypeWhitelist.indexOf(messages[i].subtype) > -1) {
-        messageCount++;
-      }
-
-      if (users.indexOf(messages[i].user) < 0) {
-        users.push(messages[i].user);
-      }
-    }
-
-    return messageCount > minimum && users.length > 1;
-  },
-
-  formatMessage: function(text) {
-    return {
-      text,
-      username: 'firebot_nametest',
-      icon_emoji: ':fire:'
-    };
-  },
-
-  formatBotText: function (bot, channelList, type) {
-    var text = 'The ';
-    var pastTense = type === 'daily' || type === 'revived';
-    var channelName;
-
-    for (var i = 0; i < channelList.length; i++) {
-      channelName = this.formatChannelName(bot, channelList[i].name);
-      if (channelList.length === 1) {
-        text += `${channelName} channel ${pastTense ? 'was' : 'is'} `;
-      } else if (i === channelList.length - 1) {
-        text += ` and ${channelName} channels ${pastTense ? 'were' : 'are'} `;
-      } else if (i === channelList.length - 2) {
-        text += `${channelName}`;
-      } else {
-        text += `${channelName}, `;
-      }
-    }
-
-    if (type === 'daily') {
-      text += 'busy today.';
-    } else if (type === 'revived') {
-      text += 'revived!!!';
-    } else if (type === 'dead') {
-      text += 'pretty dead. No new posts in the last week.'
-    } else {
-      text += 'lit right now.';
-    }
-
-    return text;
-  },
-
-  formatChannelName: function(bot, channelName) {
-    if (bot.allChannels && bot.allChannels.length) {
-      var chan = bot.allChannels.find(function(channel) {
-        return channel.name === channelName;
-      });
-
-      if (chan) {
-        return '<#' + chan.id + '|' + channelName + '>';
-      }
-    }
-
-    return channelName;
   }
+};
+
+function stopInterval(bot) {
+  clearInterval(bot.checkInterval);
+  bot.checkInterval = null;
+};
+
+function startInterval(bot) {
+  /* Clears interval if it already exists */
+  if (bot.checkInterval) {
+    stopInterval(bot);
+  }
+
+  /* Checks level of activity every 10 minutes (600000ms)*/
+  bot.checkInterval = setInterval( function () {
+    bot.recentActiveChannels = [];
+
+    getChannelActivity(bot, 'recent', function (channel, isLast) {
+      if (channel) {
+        bot.recentActiveChannels.push(channel);
+
+        if (!bot.hourlyActivity[channel.name] || bot.hourlyActivity[channel.name] === 5) {
+          bot.hourlyActivity[channel.name] = 1;
+        } else {
+          bot.hourlyActivity[channel.name] += 1;
+        }
+      }
+
+      if (isLast) {
+        /* Only announces channels that haven't been announced in the last half hour */
+        var filteredChannels = [];
+        for (var i = 0; i < bot.recentActiveChannels.length; i++) {
+          if (bot.hourlyActivity[bot.recentActiveChannels[i].name] === 1) {
+            filteredChannels.push(bot.recentActiveChannels[i]);
+          }
+        }
+
+        /* If a channel wasn't active during the last tick, it resets the hourly count to 0 */
+        Object.keys(bot.hourlyActivity).forEach(function(key) {
+          if (!bot.recentActiveChannels.find(function(channel) { channel.name === key })) {
+            var value = bot.hourlyActivity[key];
+            bot.hourlyActivity[key] = value && value < 5 ? value + 1 : 0;
+          }
+        });
+
+        if (filteredChannels.length) {
+          var text = formatBotText(bot, filteredChannels, "lit");
+          for (var c in bot.memberChannels) {
+            bot.send({ text, channel: bot.memberChannels[c] });
+          }
+        }
+      }
+    });
+
+  }, defaultInterval);
+};
+
+function getChannelList(bot, callback) {
+  /* Slack API call to get list of channels */
+  if (bot.allChannels && bot.allChannels.length) {
+    callback(bot.allChannels);
+  } else {
+    bot.api.channels.list({ token: bot.config.bot.app_token }, function (err, res) {
+      if (res && res.ok) {
+        bot.allChannels = res.channels;
+        callback(res.channels);
+      }
+    });
+  }
+};
+
+function getChannelHistory(bot, channel, type, callback) {
+  var { timeOffset, messageMinimum } = historyConfig[type];
+  var oldestTime = (new Date().getTime() - timeOffset) / 1000;
+
+  bot.api.channels.history({
+    token: bot.config.bot.app_token,
+    channel: channel.id,
+    oldest: oldestTime,
+    count: 50,
+  }, function(err, res) {
+    var isValid = res && res.ok && res.messages && ((!messageMinimum && !res.messages.length) || (messageMinimum && channelIsActive(res.messages, messageMinimum)));
+    callback(isValid);
+  });
+};
+
+function getChannelActivity(bot, type, callback) {
+  /* Gets list of channels with more than X messages in the last day */
+
+  getChannelList(bot, function (channels) {
+    /*
+      Only fetches the next channel's information once the previous one is fetched.
+      A lot of nested callbacks. Cleaner way to do it?
+    */
+    var idx = 0;
+
+    var loopArray = function(arr) {
+      getChannelHistory(bot, channels[idx], type, function(isValid) {
+        var isLast = idx === arr.length - 1;
+        if (isValid) {
+          callback(channels[idx], isLast);
+        } else if (isLast) {
+          callback(false, isLast);
+        }
+
+        idx++;
+
+        if (idx < arr.length) {
+          loopArray(arr);
+        }
+      });
+    };
+
+    if (channels) {
+      loopArray(channels);
+    }
+  });
+};
+
+function channelIsDead(bot, channel) {
+  return bot.deadChannels.find(function(ch) { return ch.id === channel.id });
+};
+
+function channelIsActive(messages, minimum) {
+  var users = [];
+  var messageCount = 0;
+
+  for (var i = 0; i < messages.length; i++) {
+    if (!messages[i].subtype || subtypeWhitelist.indexOf(messages[i].subtype) > -1) {
+      messageCount++;
+    }
+
+    if (users.indexOf(messages[i].user) < 0) {
+      users.push(messages[i].user);
+    }
+  }
+
+  return messageCount > minimum && users.length > 1;
+};
+
+function formatMessage(text) {
+  return {
+    text,
+    username: 'firebot_nametest',
+    icon_emoji: ':fire:'
+  };
+};
+
+function formatBotText(bot, channelList, type) {
+  var text = 'The ';
+  var pastTense = type === 'daily' || type === 'revived';
+  var channelName;
+
+  for (var i = 0; i < channelList.length; i++) {
+    channelName = formatChannelName(bot, channelList[i].name);
+    if (channelList.length === 1) {
+      text += `${channelName} channel ${pastTense ? 'was' : 'is'} `;
+    } else if (i === channelList.length - 1) {
+      text += ` and ${channelName} channels ${pastTense ? 'were' : 'are'} `;
+    } else if (i === channelList.length - 2) {
+      text += `${channelName}`;
+    } else {
+      text += `${channelName}, `;
+    }
+  }
+
+  if (type === 'daily') {
+    text += 'busy today.';
+  } else if (type === 'revived') {
+    text += 'revived!!!';
+  } else if (type === 'dead') {
+    text += 'pretty dead. No new posts in the last week.'
+  } else {
+    text += 'lit right now.';
+  }
+
+  return text;
+};
+
+function formatChannelName(bot, channelName) {
+  if (bot.allChannels && bot.allChannels.length) {
+    var chan = bot.allChannels.find(function(channel) {
+      return channel.name === channelName;
+    });
+
+    if (chan) {
+      return '<#' + chan.id + '|' + channelName + '>';
+    }
+  }
+
+  return channelName;
 };
 
 module.exports = Firebot;

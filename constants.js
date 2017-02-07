@@ -1,5 +1,5 @@
 /* Development vs production hostname */
-var hostname = process.env.port === '3000' ? 'http://localhost:3000' : 'http://firebot-dev.us-west-2.elasticbeanstalk.com';
+var hostName = process.env.port === '3000' ? 'http://localhost:3000' : 'http://firebot-dev.us-west-2.elasticbeanstalk.com';
 
 /*
   List of message subtypes that count as 'real messages' for measuring activity.
@@ -80,9 +80,23 @@ var custom = {
 */
 
 var historyConfig = {
-  'daily': { timeOffset: 86400000, messageMinimum: 19 },
-  'recent': { timeOffset: 900000, messageMinimum: 9 },
-  'dead': { timeOffset: 86400000 * 7, messageMinimum: null },
+  'daily': {
+    timeOffset: 86400000,
+    messageMinimum: 19,
+    channelList: 'dailyActiveChannels',
+    emptyListText: 'No channels have been busy lately',
+  },
+  'recent': {
+    timeOffset: 900000,
+    messageMinimum: 9,
+    channelList: 'recentActiveChannels'
+  },
+  'dead': {
+    timeOffset: 86400000 * 7,
+    messageMinimum: null,
+    channelList: 'deadChannels',
+    emptyListText: 'No dead channels right now',
+  },
 };
 
 /*
@@ -94,7 +108,7 @@ var defaultInterval = 600000;
 
 var constants = {
   historyConfig,
-  hostname,
+  hostName,
   subtypeWhitelist,
   defaultInterval,
   responses: { negative, positive, indifferent, grabBag },
