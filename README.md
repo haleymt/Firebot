@@ -14,7 +14,9 @@ own in order to get a unique `clientId` and `clientSecret` from Slack that will
 allow you to make oauth requests.  
 
 **1.** To create an app, go [ here ]( https://api.slack.com/apps?new_app=1 ) and click **Create New App**. Follow the directions. Make sure to add a bot user to the app. Hang on to the `clientId` and `clientSecret`.
+
 **2.** Clone this repository to your computer and run `npm install`.
+
 **3.** Create a file called `.env` and add your`clientId` and `clientSecret` to it. You'll also need to define the port. Your `.env` file should look like this:
 ```
 clientSecret=XXXXXXXXXX.XXXXXXXXX
@@ -22,7 +24,9 @@ clientId="XXXXXXX-XXXXXXXXX-XXXXXXXXX"
 port=3000
 IS_DEV=true
 ```
+
 **4.** To start the server, run `npm start` in the terminal and navigate to localhost.
+
 **5.** **NOTE:** Before pushing any edits, be sure to either add the following to a `.gitignore` file or `rm -rf` each of them from the terminal. Both `.env` and `db_firebot` contain sensitive information. In particular, pushing `db_firebot` will cause any tokens stored there to become invalid. Pushing anything from `node_modules` will cause errors in the production environment. Your `.gitignore` should look like this:
 ```
 .gitignore
