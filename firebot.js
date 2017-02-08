@@ -410,9 +410,10 @@ function channelIsActive(messages, minimum) {
 };
 
 function formatMessage(text) {
+  // TODO: use this to force bot message appearance
   return {
     text,
-    username: 'firebot_nametest',
+    username: 'firebot',
     icon_emoji: ':fire:'
   };
 };
