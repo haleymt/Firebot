@@ -16,7 +16,7 @@ var controllerConfig = {
 };
 
 if (isProduction) {
-  var { apiKey_FB, authDomain_FB, databseURL_FB, storageBucket_FB, messagingSenderId_FB } = process.env;
+  var { apiKey_FB, authDomain_FB, databaseURL_FB, storageBucket_FB, messagingSenderId_FB } = process.env;
 
   firebaseConfig = {
     apiKey: apiKey_FB,
