@@ -1,9 +1,23 @@
 var firebase = require('firebase');
-var { firebaseConfig } = require('./constants');
 
 var firebase_store = {
   config: function(cb) {
-    firebase.initializeApp(firebaseConfig);
+    var {
+      apiKey_FB,
+      authDomain_FB,
+      databaseURL_FB,
+      storageBucket_FB,
+      messagingSenderId_FB
+    } = process.env;
+
+    firebase.initializeApp({
+      apiKey: apiKey_FB,
+      authDomain: authDomain_FB,
+      databaseURL: databaseURL_FB,
+      storageBucket: storageBucket_FB,
+      messagingSenderId: messagingSenderId_FB
+    });
+
     var database = firebase.database();
 
     this.users.database = database;
@@ -15,9 +29,6 @@ var firebase_store = {
   users: {
     save: function (user, cb) {
       if (user.id) {
-        /* ADMIN version */
-        // this.database.child("users").set({ user.id: user });
-
         this.database.ref('users/' + user.id).set(user);
         cb(null, user);
       } else {

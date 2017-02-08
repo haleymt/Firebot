@@ -27,6 +27,19 @@ var Firebot = {
   },
 
   run: function () {
+    /* Use Firebase only in production */
+    var controllerConfig = {
+      debug: !isProduction,
+      retry: Infinity
+    };
+
+    if (isProduction) {
+      controllerConfig.storage = firebase_store;
+    } else {
+      /* Use a simple json file store in development */
+      controllerConfig.json_file_store = './db_firebot';
+    }
+    
     this.controller = Botkit.slackbot(controllerConfig);
 
     this.controller.webserver = router;
