@@ -4,7 +4,7 @@ var { hostName } = require('../constants');
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
-  res.render('index', { redirectUri: hostName + '/oauth' });
+  res.render('index', { redirectUri: hostName + '/login' });
 });
 
 module.exports = router;

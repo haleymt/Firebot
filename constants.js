@@ -1,6 +1,6 @@
 /* Development vs production hostname */
 var isProduction = process.env.NODE_ENV === 'production';
-var hostName = !isProduction ? 'http://localhost:' + process.env.port : 'http://fervidbot.com';
+var hostName = !isProduction ? 'http://localhost:' + process.env.port : 'http://www.fervidbot.com';
 
 /*
   List of message subtypes that count as 'real messages' for measuring activity.
