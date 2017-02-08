@@ -51,8 +51,8 @@ var Firebot = {
       } else {
         res.render('success');
       }
-    })
-    .createWebhookEndpoints(controller.webserver);
+    });
+    // .createWebhookEndpoints(controller.webserver);
 
     controller.storage.teams.all(function(err, teams) {
 
