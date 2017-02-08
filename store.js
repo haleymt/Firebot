@@ -1,6 +1,6 @@
 var firebase = require('firebase');
 
-var firebase_store = {
+firebase_store: {
   config: function(cb) {
     var {
       apiKey_FB,
@@ -132,4 +132,4 @@ var firebase_store = {
   }
 };
 
-module.exports = firebase_store;
+module.exports = { firebase_store };
