@@ -22,7 +22,6 @@ allow you to make oauth requests.
 clientSecret=XXXXXXXXXX.XXXXXXXXX
 clientId="XXXXXXX-XXXXXXXXX-XXXXXXXXX"
 port=3000
-IS_DEV=true
 ```
 
 **4.** To start the server, run `npm start` in the terminal and navigate to localhost.

@@ -1,5 +1,6 @@
 /* Development vs production hostname */
-var hostName = !!process.env.IS_DEV ? 'http://localhost:' + process.env.port : 'http://fervidbot.com';
+var isProduction = process.env.NODE_ENV === 'production';
+var hostName = !isProduction ? 'http://localhost:' + process.env.port : 'http://fervidbot.com';
 
 /*
   List of message subtypes that count as 'real messages' for measuring activity.
@@ -107,6 +108,7 @@ var historyConfig = {
 var defaultInterval = 600000;
 
 var constants = {
+  isProduction,
   historyConfig,
   hostName,
   subtypeWhitelist,
