@@ -1,6 +1,37 @@
-/* Development vs production hostname */
+var firebase_store = require('./store');
+
+/* Get environment */
 var isProduction = process.env.NODE_ENV === 'production';
+
+
+/* Development vs production hostname */
 var hostName = !isProduction ? 'http://localhost:' + process.env.port : 'http://www.fervidbot.com';
+
+
+/* Use Firebase only in production */
+var firebaseConfig = {};
+var controllerConfig = {
+  debug: !isProduction,
+  retry: Infinity
+};
+
+if (isProduction) {
+  var { apiKey_FB, authDomain_FB, databseURL_FB, storageBucket_FB, messagingSenderId_FB } = process.env;
+
+  firebaseConfig = {
+    apiKey: apiKey_FB,
+    authDomain: authDomain_FB,
+    databaseURL: databaseURL_FB,
+    storageBucket: storageBucket_FB,
+    messagingSenderId: messagingSenderId_FB
+  }
+
+  controllerConfig.storage = firebase_store;
+} else {
+  /* Use a simple json file store in development */
+  controllerConfig.json_file_store = './db_firebot';
+}
+
 
 /*
   List of message subtypes that count as 'real messages' for measuring activity.
@@ -58,6 +89,8 @@ var defaultInterval = 600000;
 
 var constants = {
   isProduction,
+  controllerConfig,
+  firebaseConfig,
   historyConfig,
   hostName,
   subtypeWhitelist,

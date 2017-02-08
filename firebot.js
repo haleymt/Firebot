@@ -8,7 +8,16 @@ if (!process.env.clientId || !process.env.clientSecret || !process.env.port) {
 
 var Botkit = require('botkit');
 var router = require('./routes/index');
-var { subtypeWhitelist, responses, hostName, historyConfig, defaultInterval, isProduction } = require('./constants');
+var firebase_store = require('./store');
+var {
+  subtypeWhitelist,
+  responses,
+  hostName,
+  controllerConfig,
+  historyConfig,
+  defaultInterval,
+  isProduction
+} = require('./constants');
 
 var Firebot = {
   bots: {},
@@ -18,12 +27,7 @@ var Firebot = {
   },
 
   run: function () {
-    /* This is really really basic data storage. Find a better solution */
-    this.controller = Botkit.slackbot({
-      json_file_store: './db_firebot/',
-      debug: !isProduction,
-      retry: Infinity,
-    });
+    this.controller = Botkit.slackbot(controllerConfig);
 
     this.controller.webserver = router;
     this.controller.config.port = process.env.port;
@@ -43,7 +47,6 @@ var Firebot = {
 
     controller.createOauthEndpoints(controller.webserver, function(err,req,res) {
       if (err) {
-        // console.log(err);
         res.status(err.status || 500);
         res.render('error', {
           message: err.message,
@@ -56,7 +59,6 @@ var Firebot = {
     // .createWebhookEndpoints(controller.webserver);
 
     controller.storage.teams.all(function(err, teams) {
-
       if (err) {
         throw new Error(err);
       }
@@ -77,6 +79,7 @@ var Firebot = {
   attachEventListeners: function() {
     var { controller } = this;
     controller.on('create_team', function(team) {
+      console.log(team);
       var bot = controller.spawn(team);
       this.setUpBot(bot);
     }.bind(this));

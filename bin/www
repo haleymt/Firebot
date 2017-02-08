@@ -8,6 +8,7 @@ var app = require('../main');
 var debug = require('debug')('Firebot');
 var http = require('http');
 var Firebot = require('../firebot');
+var firebase_store = require('../store');
 
 /**
  * Get port from environment and store in Express.
@@ -82,6 +83,8 @@ function onError(error) {
  * Event listener for HTTP server "listening" event.
  */
 
+
+
 function onListening() {
   var addr = server.address();
   var bind = typeof addr === 'string'
@@ -89,6 +92,13 @@ function onListening() {
     : 'port ' + addr.port;
   debug('Listening on ' + bind);
 
-  /* run firebot once server is up */
-  Firebot.run();
+  if (app.get('env') === 'development') {
+    Firebot.run();
+  } else {
+    /* Initialize Firebase */
+    firebase_store.config( function() {
+      /* Run firebot once server and database are up */
+      Firebot.run();
+    });
+  }
 }
