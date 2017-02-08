@@ -1,5 +1,5 @@
 /* Development vs production hostname */
-var hostName = process.env.IS_DEV ? 'http://localhost:' + process.env.port : 'http://firebot-dev.us-west-2.elasticbeanstalk.com';
+var hostName = !!process.env.IS_DEV ? 'http://localhost:' + process.env.port : 'http://fervidbot.com';
 
 /*
   List of message subtypes that count as 'real messages' for measuring activity.

@@ -4,7 +4,7 @@
 if (!process.env.clientId || !process.env.clientSecret || !process.env.port) {
   console.log('Error: Specify clientId clientSecret and port in environment');
   process.exit(1);
-}
+} 
 
 var Botkit = require('botkit');
 var router = require('./routes/index');
@@ -21,7 +21,7 @@ var Firebot = {
     /* This is really really basic data storage. Find a better solution */
     this.controller = Botkit.slackbot({
       json_file_store: './db_firebot/',
-      debug: process.env.IS_DEV,
+      debug: !!process.env.IS_DEV,
       retry: Infinity,
     });
 
@@ -261,6 +261,10 @@ var Firebot = {
   }
 };
 
+/*
+  BOT FUNCTIONS
+*/
+
 function stop(bot) {
   stopInterval(bot);
   bot.closeRTM();
@@ -465,5 +469,7 @@ function formatChannelName(bot, channelName) {
 
   return channelName;
 };
+
+
 
 module.exports = Firebot;
