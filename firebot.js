@@ -43,7 +43,7 @@ var Firebot = {
 
     controller.createOauthEndpoints(controller.webserver, function(err,req,res) {
       if (err) {
-        console.log(err);
+        // console.log(err);
         res.status(err.status || 500);
         res.render('error', {
           message: err.message,
