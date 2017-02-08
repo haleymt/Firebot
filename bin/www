@@ -8,7 +8,7 @@ var app = require('../main');
 var debug = require('debug')('Firebot');
 var http = require('http');
 var Firebot = require('../firebot');
-var firebase_store = require('../store');
+var FirebaseStore = require('../store');
 
 /**
  * Get port from environment and store in Express.
@@ -96,9 +96,9 @@ function onListening() {
     Firebot.run();
   } else {
     /* Initialize Firebase */
-    firebase_store.config( function() {
+    new FirebaseStore().config( function(store) {
       /* Run firebot once server and database are up */
-      Firebot.run();
+      Firebot.run(store);
     });
   }
 }

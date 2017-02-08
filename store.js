@@ -1,135 +1,119 @@
 var firebase = require('firebase');
 
-var firebase_store = {
-  config: function (cb) {
-    var {
-      apiKey_FB,
-      authDomain_FB,
-      databaseURL_FB,
-      storageBucket_FB,
-      messagingSenderId_FB
-    } = process.env;
-
-    firebase.initializeApp({
-      apiKey: apiKey_FB,
-      authDomain: authDomain_FB,
-      databaseURL: databaseURL_FB,
-      storageBucket: storageBucket_FB,
-      messagingSenderId: messagingSenderId_FB
-    });
-
-    var database = firebase.database();
-
-    this.users.database = database;
-    this.channels.database = database;
-    this.teams.database = database;
-    cb();
-  },
-
-  users: {
-    save: function (user, cb) {
-      if (user.id) {
-        this.database.ref('users/' + user.id).set(user);
-        cb(null, user);
-      } else {
-        cb('No ID specified');
-      }
-    },
-
-    get: function (userId, cb) {
-      this.database.ref('users/' + userId).once('value').then(
-        function(snapshot) {
-          cb(null, snapshot.val());
-        }
-      );
-    },
-
-    delete: function (userId, cb) {
-      this.database.ref('users/' + userId).remove();
-      cb(null, userId);
-    },
-
-    all: function (cb) {
-      this.database.ref('users').once('value').then(
-        function(snapshot) {
-          var users = snapshot.val() || [];
-          cb(null, users);
-        }
-      );
-    }
-  },
-
-  channels: {
-    save: function (channel, cb) {
-      if (channel.id) {
-        this.database.ref('channels/' + channel.id).set(channel);
-        cb(null, channel);
-      } else {
-        cb('No ID specified');
-      }
-    },
-
-    get: function (channelId, cb) {
-      this.database.ref('channels/' + channelId).once('value').then(
-        function(snapshot) {
-          cb(null, snapshot.val());
-        }
-      );
-    },
-
-    delete: function (channelId, cb) {
-      this.database.ref('channels/' + channelId).remove();
-      cb(null, channelId);
-    },
-
-    all: function (cb) {
-      this.database.ref('channels').once('value').then(
-        function(snapshot) {
-          var channels = snapshot.val() || [];
-          cb(null, channels);
-        }
-      );
-    }
-  },
-
-  teams: {
-    save: function (team, cb) {
-      console.log('SAVING');
-      if (team.id) {
-        this.database.ref('teams/' + team.id).set(team);
-        cb(null, team);
-      } else {
-        cb('No ID specified');
-      }
-    },
-
-    get: function (teamId, cb) {
-      console.log('GETTING');
-      this.database.ref('teams/' + teamId).on('value', function(snapshot) {
-        var val =  snapshot.val() || false;
-        cb(null, val);
-      }, function(err) {
-        if (err) {
-          cb(null, false);
-        }
-      });
-    },
-
-    delete: function (teamId, cb) {
-      this.database.ref('teams/' + teamId).remove();
-      cb(null, teamId);
-    },
-
-    all: function (cb) {
-      console.log('GETTING ALL');
-      this.database.ref('teams').once('value').then(
-        function(snapshot) {
-          var teams = snapshot.val() || [];
-          cb(null, teams);
-        }
-      );
-    }
-  }
+var FirebaseStore = function() {
+  this.database = {};
 };
 
-module.exports = { firebase_store };
+FirebaseStore.prototype.config = function(cb) {
+  var {
+    apiKey_FB,
+    authDomain_FB,
+    databaseURL_FB,
+    storageBucket_FB,
+    messagingSenderId_FB
+  } = process.env;
+
+  firebase.initializeApp({
+    apiKey: apiKey_FB,
+    authDomain: authDomain_FB,
+    databaseURL: databaseURL_FB,
+    storageBucket: storageBucket_FB,
+    messagingSenderId: messagingSenderId_FB
+  });
+
+  this.database = firebase.database();
+  cb(this.getStore());
+}
+
+
+FirebaseStore.prototype.getStore = function() {
+  var _this = this;
+  function get_item(type, itemId, cb) {
+    _this.database.ref(type + '/' + itemId).once('value').then(
+      function(snapshot) {
+        cb(null, snapshot.val());
+      }
+    );
+  };
+
+  function save_item(type, item, cb) {
+    if (item.id) {
+      _this.database.ref(type + '/' + item.id).set(item);
+      cb(null, item);
+    } else {
+      cb('No ID specified');
+    }
+  };
+
+  function delete_item(type, itemId, cb) {
+    _this.database.ref(type + '/' + itemId).remove();
+    cb(null, itemId);
+  };
+
+  function all_items(type, cb) {
+    _this.database.ref(type).once('value').then(
+      function(snapshot) {
+        var items = snapshot.val() || [];
+        cb(null, items);
+      }
+    );
+  };
+
+  return {
+    users: {
+      save: function (user, cb) {
+        return save_item('users', user, cb);
+      },
+
+      get: function (userId, cb) {
+        return get_item('users', userId, cb);
+      },
+
+      delete: function (userId, cb) {
+        return delete_item('users', userId, cb);
+      },
+
+      all: function (cb) {
+        return all_items('users', cb);
+      }
+    },
+
+    channels: {
+      save: function (user, cb) {
+        return save_item('channels', user, cb);
+      },
+
+      get: function (userId, cb) {
+        return get_item('channels', userId, cb);
+      },
+
+      delete: function (userId, cb) {
+        return delete_item('channels', userId, cb);
+      },
+
+      all: function (cb) {
+        return all_items('channels', cb);
+      }
+    },
+
+    teams: {
+      save: function (user, cb) {
+        return save_item('teams', user, cb);
+      },
+
+      get: function (userId, cb) {
+        return get_item('teams', userId, cb);
+      },
+
+      delete: function (userId, cb) {
+        return delete_item('teams', userId, cb);
+      },
+
+      all: function (cb) {
+        return all_items('teams', cb);
+      }
+    }
+  };
+};
+
+module.exports = FirebaseStore;

@@ -8,7 +8,6 @@ if (!process.env.clientId || !process.env.clientSecret || !process.env.port) {
 
 var Botkit = require('botkit');
 var router = require('./routes/index');
-var firebase_store = require('./store');
 var {
   subtypeWhitelist,
   responses,
@@ -26,7 +25,7 @@ var Firebot = {
     this.bots[bot.config.token] = bot;
   },
 
-  run: function () {
+  run: function (firebase_store) {
     /* Use Firebase only in production */
     var controllerConfig = {
       debug: !isProduction,
@@ -39,7 +38,7 @@ var Firebot = {
       /* Use a simple json file store in development */
       controllerConfig.json_file_store = './db_firebot';
     }
-    
+
     this.controller = Botkit.slackbot(controllerConfig);
 
     this.controller.webserver = router;
