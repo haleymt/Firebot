@@ -8,7 +8,7 @@ if (!process.env.clientId || !process.env.clientSecret || !process.env.port) {
 
 var Botkit = require('botkit');
 var router = require('./routes/index');
-var { subtypeWhitelist, responses, peopleTypes, hostName, historyConfig, defaultInterval, isProduction } = require('./constants');
+var { subtypeWhitelist, responses, hostName, historyConfig, defaultInterval, isProduction } = require('./constants');
 
 var Firebot = {
   bots: {},
@@ -130,9 +130,9 @@ var Firebot = {
       var question = message.match[1];
       var type;
 
-      if (question === ' are dead') {
+      if (question === ' are dead' || question === 'are dead?') {
         type = 'dead';
-      } else if (question === ' are active') {
+      } else if (question === ' are active' || question === 'are dead?') {
         type = 'daily';
       }
 
@@ -188,23 +188,14 @@ var Firebot = {
         for (var i = 0; i < bot.allUsers.length; i++) {
           if (bot.allUsers[i].id === channel || bot.allUsers[i].name === channel) {
             channel = bot.allUsers[i].name;
+            text = responses.grabBag[Math.floor(Math.random() * responses.grabBag.length)];
 
-            if (peopleTypes.custom[channel]) {
-              text = peopleTypes.custom[channel];
-            } else if (peopleTypes.good.indexOf(channel) > -1) {
-              text = responses.positive[Math.floor(Math.random() * responses.positive.length)];
-            } else if (peopleTypes.meh.indexOf(channel) > -1) {
-              text = responses.indifferent[Math.floor(Math.random() * responses.indifferent.length)];
-            } else if (peopleTypes.bad.indexOf(channel) > -1) {
-              text = responses.negative[Math.floor(Math.random() * responses.negative.length)];
-            } else {
-              text = responses.grabBag[Math.floor(Math.random() * responses.grabBag.length)];
-            }
+            // TODO: allow teams to create customized responses
           }
         }
 
         if (bot.hourlyActivity[channel]) {
-          text = channel === 'politics' ? 'no, but yes' : 'yep';
+          text = 'yep';
         }
 
         bot.reply(message, text);

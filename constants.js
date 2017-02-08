@@ -23,57 +23,6 @@ var indifferent =['fine', 'meh', 'sure', 'hm'];
 var grabBag = negative.concat(positive).concat(indifferent);
 
 
-var good = ['hales', 'haley', 'firebot'];
-var meh = ['rev', 'st_rev'];
-var bad = [
-  'shreeda',
-  'freeshreeda',
-  'curry.ove',
-  'voidfraction',
-  'akira',
-  'sol',
-  'tao',
-  'turrible_tao',
-  'jamesmcn',
-  'ksim',
-  'jsf',
-  'ema',
-  'othercriteria',
-  'cwage',
-  'alt',
-  'meaningness',
-  'andrew',
-  'asquidislove',
-  'ctrl',
-  'black_dwarf',
-  'blue_traveler',
-  'byrne',
-  'pamela',
-  'bookoftamara',
-  'chamber_of_heart',
-  'cobuddha',
-  'contemplationist',
-  'drethelin',
-  'grumplessgrinch',
-  'joelgrus',
-  'julespitt',
-  'keffie',
-  'mattsimpson',
-  'niftierideology',
-  'simplicio',
-  'suchaone',
-  'svigalae',
-  'the_langrangian',
-  'tipsycaek'
-];
-
-var custom = {
-  'sarah': 'they are a banana',
-  'sarahsloth': 'they are a banana',
-  'beiser': 'lol fuck off',
-  'gabe': ':hankey:'
-};
-
 /*
   Defines the settings for each of the different types of channel history API calls.
   Milliseconds in a day: 86400000
@@ -114,7 +63,6 @@ var constants = {
   subtypeWhitelist,
   defaultInterval,
   responses: { negative, positive, indifferent, grabBag },
-  peopleTypes: { good, bad, meh, custom },
 };
 
 module.exports = constants;
