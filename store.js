@@ -1,7 +1,7 @@
 var firebase = require('firebase');
 
-firebase_store: {
-  config: function(cb) {
+var firebase_store = {
+  config: function (cb) {
     var {
       apiKey_FB,
       authDomain_FB,
@@ -36,7 +36,7 @@ firebase_store: {
       }
     },
 
-    get: function(userId, cb) {
+    get: function (userId, cb) {
       this.database.ref('users/' + userId).once('value').then(
         function(snapshot) {
           cb(null, snapshot.val());
@@ -44,12 +44,12 @@ firebase_store: {
       );
     },
 
-    delete: function(userId, cb) {
+    delete: function (userId, cb) {
       this.database.ref('users/' + userId).remove();
       cb(null, userId);
     },
 
-    all: function(cb) {
+    all: function (cb) {
       this.database.ref('users').once('value').then(
         function(snapshot) {
           var users = snapshot.val() || [];
@@ -69,7 +69,7 @@ firebase_store: {
       }
     },
 
-    get: function(channelId, cb) {
+    get: function (channelId, cb) {
       this.database.ref('channels/' + channelId).once('value').then(
         function(snapshot) {
           cb(null, snapshot.val());
@@ -77,12 +77,12 @@ firebase_store: {
       );
     },
 
-    delete: function(channelId, cb) {
+    delete: function (channelId, cb) {
       this.database.ref('channels/' + channelId).remove();
       cb(null, channelId);
     },
 
-    all: function(cb) {
+    all: function (cb) {
       this.database.ref('channels').once('value').then(
         function(snapshot) {
           var channels = snapshot.val() || [];
@@ -103,7 +103,7 @@ firebase_store: {
       }
     },
 
-    get: function(teamId, cb) {
+    get: function (teamId, cb) {
       console.log('GETTING');
       this.database.ref('teams/' + teamId).on('value', function(snapshot) {
         var val =  snapshot.val() || false;
@@ -115,12 +115,12 @@ firebase_store: {
       });
     },
 
-    delete: function(teamId, cb) {
+    delete: function (teamId, cb) {
       this.database.ref('teams/' + teamId).remove();
       cb(null, teamId);
     },
 
-    all: function(cb) {
+    all: function (cb) {
       console.log('GETTING ALL');
       this.database.ref('teams').once('value').then(
         function(snapshot) {
