@@ -7,8 +7,8 @@
 var app = require('../main');
 var debug = require('debug')('Firebot');
 var http = require('http');
-var Firebot = require('../firebot');
-var FirebaseStore = require('../store');
+
+var { Firebot, FirebaseStore } = require('../lib');
 
 /**
  * Get port from environment and store in Express.
@@ -92,7 +92,7 @@ function onListening() {
     : 'port ' + addr.port;
   debug('Listening on ' + bind);
 
-  if (app.get('env') === 'development') {
+  if (process.env.NODE_ENV === 'development') {
     Firebot.run();
   } else {
     /* Initialize Firebase */
