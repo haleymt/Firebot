@@ -12,7 +12,6 @@ var {
   subtypeWhitelist,
   responses,
   hostName,
-  controllerConfig,
   historyConfig,
   defaultInterval,
   isProduction
@@ -54,7 +53,7 @@ var Firebot = {
       clientId: process.env.clientId,
       clientSecret: process.env.clientSecret,
       redirectUri: hostName + '/oauth',
-      scopes: ['channels:history','incoming-webhook','team:read','users:read','chat:write:bot', 'bot','channels:read','im:read','im:write','groups:read','emoji:read']
+      scopes: ['channels:history','incoming-webhook','team:read','users:read','chat:write:bot', 'bot','channels:read','im:read','im:write']
     });
 
     controller.createOauthEndpoints(controller.webserver, function(err,req,res) {
@@ -91,7 +90,6 @@ var Firebot = {
   attachEventListeners: function() {
     var { controller } = this;
     controller.on('create_team', function(team) {
-      console.log(team);
       var bot = controller.spawn(team);
       this.setUpBot(bot);
     }.bind(this));
