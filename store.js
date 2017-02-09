@@ -23,7 +23,7 @@ FirebaseStore.prototype.config = function(cb) {
 
   this.database = firebase.database();
   cb(this.getStore());
-}
+};
 
 
 FirebaseStore.prototype.getStore = function() {

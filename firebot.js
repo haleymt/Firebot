@@ -53,7 +53,7 @@ var Firebot = {
       clientId: process.env.clientId,
       clientSecret: process.env.clientSecret,
       redirectUri: hostName + '/oauth',
-      scopes: ['channels:history','incoming-webhook','team:read','users:read','chat:write:bot', 'bot','channels:read','im:read','im:write']
+      scopes: ['incoming-webhook','team:read','users:read','channels:read', 'channels:history', 'chat:write:bot', 'bot']
     });
 
     controller.createOauthEndpoints(controller.webserver, function(err,req,res) {
@@ -169,7 +169,7 @@ var Firebot = {
       }
     });
 
-    controller.hears(['who is lit'], 'ambient,direct_message,direct_mention,mention', function(bot, message) {
+    controller.hears(['who is lit', 'who is lit?'], 'ambient,direct_message,direct_mention,mention', function(bot, message) {
       bot.reply(message, 'firebot is pretty lit');
     });
 
