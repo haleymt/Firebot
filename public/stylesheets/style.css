@@ -82,6 +82,11 @@ li {
   margin-top: 15px;
 }
 
+h4 {
+  margin-bottom: -5px;
+  margin-top: 25px;
+}
+
 .subsection img {
   border-radius: 5px;
   border: 1px solid rgba(0,0,0,0.2);
