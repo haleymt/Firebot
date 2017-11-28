@@ -4,7 +4,7 @@ Firebot is a Slack App for tracking activity in a team's public channels. It is 
 
 ## Using Firebot
 If you'd like to simply add Firebot to your team as an app, you can do so
-[ here ]( http://fervidbot.com ). If you'd like to run the app in a development
+[ here ]( https://fervidbot.com ). If you'd like to run the app in a development
 environment or you'd like to adapt the bot to be a custom integration, see below.
 For any questions about [ Botkit ]( https://github.com/howdyai/botkit ) or using the [ Slack API ]( https://api.slack.com/ ), see their documentation.
 
